@@ -13,42 +13,24 @@ export const DEFAULT_THEME = 'light';
 
 export const themeStore = atom<Theme>(initStore());
 
-function initStore() {
+function initStore(): Theme {
+  // Always return light theme
   if (!import.meta.env.SSR) {
-    const persistedTheme = localStorage.getItem(kTheme) as Theme | undefined;
-    const themeAttribute = document.querySelector('html')?.getAttribute('data-theme');
+    // Set the HTML attribute to light theme
+    document.querySelector('html')?.setAttribute('data-theme', 'light');
 
-    return persistedTheme ?? (themeAttribute as Theme) ?? DEFAULT_THEME;
+    // Set localStorage to light theme
+    localStorage.setItem(kTheme, 'light');
   }
 
-  return DEFAULT_THEME;
+  return 'light' as Theme;
 }
 
 export function toggleTheme() {
-  const currentTheme = themeStore.get();
-  const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-
-  // Update the theme store
-  themeStore.set(newTheme);
-
-  // Update localStorage
-  localStorage.setItem(kTheme, newTheme);
-
-  // Update the HTML attribute
-  document.querySelector('html')?.setAttribute('data-theme', newTheme);
-
-  // Update user profile if it exists
-  try {
-    const userProfile = localStorage.getItem('bolt_user_profile');
-
-    if (userProfile) {
-      const profile = JSON.parse(userProfile);
-      profile.theme = newTheme;
-      localStorage.setItem('bolt_user_profile', JSON.stringify(profile));
-    }
-  } catch (error) {
-    console.error('Error updating user profile theme:', error);
-  }
-
-  logStore.logSystem(`Theme changed to ${newTheme} mode`);
+  /*
+   * No-op function that does nothing - we always want to stay in light mode
+   * This function is kept to prevent breaking any code that calls it
+   */
+  logStore.logSystem('Theme is set to light mode');
+  return;
 }

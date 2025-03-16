@@ -1,0 +1,42 @@
+{
+  "headTitle": "Bolt - AI Agent",
+  "languageSwitcher": "Palitan ang wika",
+  "welcome": "Maligayang pagdating sa Bolt",
+  "description": "Isang AI Agent na ginawa gamit ang Remix",
+  "intro": {
+    "heading": "Kung saan nagsisimula ang mga ideya",
+    "subheading": "Dalhin ang mga ideya sa buhay sa ilang segundo o humingi ng tulong sa mga umiiral na proyekto.",
+    "startBlankApp": "o magsimula ng blangkong app gamit ang iyong paboritong stack"
+  },
+  "ui": {
+    "importChat": "Mag-import ng Chat",
+    "importFolder": "Mag-import ng Folder",
+    "createAI": "Lumikha ng AI",
+    "loading": "Naglo-load..."
+  },
+  "navigation": {
+    "home": "Pahina",
+    "about": "Tungkol",
+    "settings": "Mga Setting"
+  },
+  "actions": {
+    "save": "I-save",
+    "cancel": "Kanselahin",
+    "submit": "Isumite",
+    "delete": "Burahin"
+  },
+  "examplePrompts": {
+    "todoApp": "Gumawa ng todo app sa React gamit ang Tailwind",
+    "blog": "Gumawa ng simpleng blog gamit ang Astro",
+    "cookieConsent": "Gumawa ng cookie consent form gamit ang Material UI",
+    "spaceInvaders": "Gumawa ng space invaders na laro",
+    "ticTacToe": "Gumawa ng Tic Tac Toe na laro gamit lang ang html, css at js"
+  },
+  "chat": {
+    "placeholder": "Paano kami makakatulong sa iyo ngayon?",
+    "getApiKey": "Kumuha ng API Key",
+    "apiKeyNotSet": "Hindi Nakatakda (Mangyaring itakda sa pamamagitan ng UI o ENV_VAR)",
+    "apiKeySetViaEnv": "Nakatakda sa pamamagitan ng environment variable",
+    "apiKeySetViaUI": "Nakatakda sa pamamagitan ng UI"
+  }
+}

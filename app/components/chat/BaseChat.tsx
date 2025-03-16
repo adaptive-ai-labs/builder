@@ -4,6 +4,7 @@
  */
 import type { JSONValue, Message } from 'ai';
 import React, { type RefCallback, useEffect, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ClientOnly } from 'remix-utils/client-only';
 import { Menu } from '~/components/sidebar/Menu.client';
 import { IconButton } from '~/components/ui/IconButton';
@@ -110,6 +111,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
     },
     ref,
   ) => {
+    const { t } = useTranslation('common', { useSuspense: false });
     const TEXTAREA_MAX_HEIGHT = chatStarted ? 400 : 200;
     const [apiKeys, setApiKeys] = useState<Record<string, string>>(getApiKeysFromCookies());
     const [modelList, setModelList] = useState<ModelInfo[]>([]);
@@ -318,10 +320,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             {!chatStarted && (
               <div id="intro" className="mt-[16vh] max-w-chat mx-auto text-center px-4 lg:px-0">
                 <h1 className="text-3xl lg:text-6xl font-bold text-bolt-elements-textPrimary mb-4 animate-fade-in">
-                  Where ideas begin
+                  {t('intro.heading')}
                 </h1>
                 <p className="text-md lg:text-xl mb-8 text-bolt-elements-textSecondary animate-fade-in animation-delay-200">
-                  Bring ideas to life in seconds or get help on existing projects.
+                  {t('intro.subheading')}
                 </p>
               </div>
             )}
@@ -333,14 +335,18 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
             >
               <ClientOnly>
                 {() => {
-                  return chatStarted ? (
-                    <Messages
-                      ref={messageRef}
-                      className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
-                      messages={messages}
-                      isStreaming={isStreaming}
-                    />
-                  ) : null;
+                  return (
+                    <>
+                      {chatStarted && (
+                        <Messages
+                          ref={messageRef}
+                          className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
+                          messages={messages}
+                          isStreaming={isStreaming}
+                        />
+                      )}
+                    </>
+                  );
                 }}
               </ClientOnly>
               <div
@@ -363,7 +369,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                 {progressAnnotations && <ProgressCompilation data={progressAnnotations} />}
                 <div
                   className={classNames(
-                    'bg-bolt-elements-background-depth-2 p-3 rounded-lg border border-bolt-elements-borderColor relative w-full max-w-chat mx-auto z-prompt',
+                    'bg-bolt-elements-background-depth-2 p-3 rounded-lg border-2 border-blue-200 relative w-full max-w-chat mx-auto z-prompt shadow-md',
 
                     /*
                      * {
@@ -383,10 +389,10 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         gradientUnits="userSpaceOnUse"
                         gradientTransform="rotate(-45)"
                       >
-                        <stop offset="0%" stopColor="#b44aff" stopOpacity="0%"></stop>
-                        <stop offset="40%" stopColor="#b44aff" stopOpacity="80%"></stop>
-                        <stop offset="50%" stopColor="#b44aff" stopOpacity="80%"></stop>
-                        <stop offset="100%" stopColor="#b44aff" stopOpacity="0%"></stop>
+                        <stop offset="0%" stopColor="#2563eb" stopOpacity="20%"></stop>
+                        <stop offset="40%" stopColor="#2563eb" stopOpacity="100%"></stop>
+                        <stop offset="50%" stopColor="#2563eb" stopOpacity="100%"></stop>
+                        <stop offset="100%" stopColor="#2563eb" stopOpacity="20%"></stop>
                       </linearGradient>
                       <linearGradient id="shine-gradient">
                         <stop offset="0%" stopColor="white" stopOpacity="0%"></stop>
@@ -401,7 +407,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                   <div>
                     <ClientOnly>
                       {() => (
-                        <div className={isModelSettingsCollapsed ? 'hidden' : ''}>
+                        <div style={{ display: isModelSettingsCollapsed ? 'none' : 'block' }}>
                           <ModelSelector
                             key={provider?.name + ':' + modelList.length}
                             model={model}
@@ -413,15 +419,24 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             apiKeys={apiKeys}
                             modelLoading={isModelLoading}
                           />
-                          {(providerList || []).length > 0 && provider && !LOCAL_PROVIDERS.includes(provider.name) && (
-                            <APIKeyManager
-                              provider={provider}
-                              apiKey={apiKeys[provider.name] || ''}
-                              setApiKey={(key) => {
-                                onApiKeysChange(provider.name, key);
-                              }}
-                            />
-                          )}
+                          <div
+                            style={{
+                              display:
+                                (providerList || []).length > 0 && provider && !LOCAL_PROVIDERS.includes(provider.name)
+                                  ? 'block'
+                                  : 'none',
+                            }}
+                          >
+                            {provider && (
+                              <APIKeyManager
+                                provider={provider}
+                                apiKey={apiKeys[provider.name] || ''}
+                                setApiKey={(key) => {
+                                  onApiKeysChange(provider.name, key);
+                                }}
+                              />
+                            )}
+                          </div>
                         </div>
                       )}
                     </ClientOnly>
@@ -516,7 +531,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                         minHeight: TEXTAREA_MIN_HEIGHT,
                         maxHeight: TEXTAREA_MAX_HEIGHT,
                       }}
-                      placeholder="How can Bolt help you today?"
+                      placeholder={t('chat.placeholder')}
                       translate="no"
                     />
                     <ClientOnly>
@@ -552,11 +567,13 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                             toast.success('Prompt enhanced!');
                           }}
                         >
-                          {enhancingPrompt ? (
-                            <div className="i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin"></div>
-                          ) : (
-                            <div className="i-bolt:stars text-xl"></div>
-                          )}
+                          <div
+                            className={
+                              enhancingPrompt
+                                ? 'i-svg-spinners:90-ring-with-bg text-bolt-elements-loader-progress text-xl animate-spin'
+                                : 'i-bolt:stars text-xl'
+                            }
+                          ></div>
                         </IconButton>
 
                         <SpeechRecognitionButton
@@ -578,30 +595,37 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
                           disabled={!providerList || providerList.length === 0}
                         >
                           <div className={`i-ph:caret-${isModelSettingsCollapsed ? 'right' : 'down'} text-lg`} />
-                          {isModelSettingsCollapsed ? <span className="text-xs">{model}</span> : <span />}
+                          <span className="text-xs" style={{ display: isModelSettingsCollapsed ? 'inline' : 'none' }}>
+                            {model}
+                          </span>
                         </IconButton>
                       </div>
-                      {input.length > 3 ? (
-                        <div className="text-xs text-bolt-elements-textTertiary">
-                          Use <kbd className="kdb px-1.5 py-0.5 rounded bg-bolt-elements-background-depth-2">Shift</kbd>{' '}
-                          + <kbd className="kdb px-1.5 py-0.5 rounded bg-bolt-elements-background-depth-2">Return</kbd>{' '}
-                          a new line
-                        </div>
-                      ) : null}
+                      <div
+                        className="text-xs text-gray-600"
+                        style={{ visibility: input.length > 3 ? 'visible' : 'hidden' }}
+                      >
+                        Use{' '}
+                        <kbd className="kdb px-1.5 py-0.5 rounded bg-gray-200 text-gray-700 border border-gray-300">
+                          Shift
+                        </kbd>{' '}
+                        +{' '}
+                        <kbd className="kdb px-1.5 py-0.5 rounded bg-gray-200 text-gray-700 border border-gray-300">
+                          Return
+                        </kbd>{' '}
+                        for a new line
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
             </div>
             <div className="flex flex-col justify-center gap-5">
-              {!chatStarted && (
+              <div style={{ display: !chatStarted ? 'block' : 'none' }}>
                 <div className="flex justify-center gap-2">
                   {ImportButtons(importChat)}
                   <GitCloneButton importChat={importChat} />
                 </div>
-              )}
-              {!chatStarted &&
-                ExamplePrompts((event, messageInput) => {
+                {ExamplePrompts((event, messageInput) => {
                   if (isStreaming) {
                     handleStop?.();
                     return;
@@ -609,7 +633,8 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
 
                   handleSendMessage?.(event, messageInput);
                 })}
-              {!chatStarted && <StarterTemplates />}
+                <StarterTemplates />
+              </div>
             </div>
           </div>
           <ClientOnly>

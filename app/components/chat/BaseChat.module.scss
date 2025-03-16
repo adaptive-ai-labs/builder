@@ -35,10 +35,11 @@
   y: calc(var(--prompt-container-offset) / 2 - var(--prompt-line-stroke-width) / 2);
   rx: calc(8px - var(--prompt-line-stroke-width));
   fill: transparent;
-  stroke-width: var(--prompt-line-stroke-width);
+  stroke-width: calc(var(--prompt-line-stroke-width) * 2);
   stroke: url(#line-gradient);
   stroke-dasharray: 35px 65px;
   stroke-dashoffset: 10;
+  opacity: 1;
 }
 
 .PromptShine {

@@ -11,6 +11,7 @@ import type { ContextAnnotation, ProgressAnnotation } from '~/types/context';
 import { WORK_DIR } from '~/utils/constants';
 import { createSummary } from '~/lib/.server/llm/create-summary';
 import { extractPropertiesFromMessage } from '~/lib/.server/llm/utils';
+import { getCurrentLanguage, setCurrentLanguage } from '~/lib/common/language-utils';
 
 export async function action(args: ActionFunctionArgs) {
   return chatAction(args);
@@ -45,10 +46,78 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
   }>();
 
   const cookieHeader = request.headers.get('Cookie');
-  const apiKeys = JSON.parse(parseCookies(cookieHeader || '').apiKeys || '{}');
-  const providerSettings: Record<string, IProviderSetting> = JSON.parse(
-    parseCookies(cookieHeader || '').providers || '{}',
-  );
+  const cookies = parseCookies(cookieHeader || '');
+  const apiKeys = JSON.parse(cookies.apiKeys || '{}');
+  const providerSettings: Record<string, IProviderSetting> = JSON.parse(cookies.providers || '{}');
+
+  // Get the current language from all sources (localStorage, cookies, URL)
+  const url = new URL(request.url);
+  const urlLang = url.searchParams.get('lng') || undefined; // Convert null to undefined
+
+  // Dump all cookies for debugging
+  logger.info(`All cookies: ${cookieHeader || 'none'}`);
+
+  // Check for i18next cookie specifically
+  const cookieLang = cookies.i18next;
+  logger.info(`i18next cookie value: ${cookieLang || 'none'}`);
+
+  // Check request headers for language information
+  const acceptLanguage = request.headers.get('Accept-Language');
+  logger.info(`Accept-Language header: ${acceptLanguage || 'none'}`);
+
+  /*
+   * Note: We can't read the request body here as it will be read later with request.json()
+   * Just log that we're in the API endpoint
+   */
+  logger.info(`Processing chat API request at ${new Date().toISOString()}`);
+
+  /*
+   * Get the language from all available sources with proper precedence
+   * 1. URL parameter (highest priority)
+   * 2. Cookie
+   * 3. Global variable
+   * 4. Default language (lowest priority)
+   */
+  const supportedLanguages = ['en', 'tl', 'ceb', 'th'];
+
+  let language;
+
+  // Check URL first (highest priority)
+  if (urlLang && supportedLanguages.includes(urlLang)) {
+    language = urlLang;
+    logger.info(`Language from URL: ${language}`);
+  }
+  // Then check cookie
+  else if (cookieLang && supportedLanguages.includes(cookieLang)) {
+    language = cookieLang;
+    logger.info(`Language from cookie: ${language}`);
+  }
+  // Then check global variable
+  else {
+    const globalLang = getCurrentLanguage();
+
+    if (globalLang && supportedLanguages.includes(globalLang)) {
+      language = globalLang;
+      logger.info(`Language from global variable: ${language}`);
+    }
+    // Default to English if no language is specified
+    else {
+      language = process.env.DEFAULT_LANGUAGE || 'en';
+      logger.info(`Using default language: ${language}`);
+    }
+  }
+
+  // Ensure our global language state is updated
+  setCurrentLanguage(language);
+
+  // Log language detection for debugging
+  logger.info(`Language selected: ${language}`);
+  logger.info(`Sources - Cookie: ${cookieLang || 'none'}, URL: ${urlLang || 'none'}, Global: ${getCurrentLanguage()}`);
+
+  // Special logging for non-English languages
+  if (language !== 'en') {
+    logger.info(`${language.toUpperCase()} language selected - ensuring proper handling`);
+  }
 
   const stream = new SwitchableStream();
 
@@ -242,6 +311,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
               contextFiles: filteredFiles,
               summary,
               messageSliceId,
+              language, // Pass the current language to the streamText function
             });
 
             result.mergeIntoDataStream(dataStream);
@@ -281,6 +351,7 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           contextFiles: filteredFiles,
           summary,
           messageSliceId,
+          language, // Pass the current language to the streamText function
         });
 
         (async () => {

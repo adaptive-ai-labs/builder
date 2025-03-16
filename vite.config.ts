@@ -109,6 +109,7 @@ export default defineConfig((config) => {
           global: 'globalThis',
         },
       },
+      exclude: ['i18next-fs-backend'],
     },
     resolve: {
       alias: {

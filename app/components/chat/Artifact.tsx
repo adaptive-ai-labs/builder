@@ -59,10 +59,10 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
   }, [actions]);
 
   return (
-    <div className="artifact border border-bolt-elements-borderColor flex flex-col overflow-hidden rounded-lg w-full transition-border duration-150">
+    <div className="artifact border-2 border-blue-200 bg-white shadow-md flex flex-col overflow-hidden rounded-lg w-full transition-border duration-150">
       <div className="flex">
         <button
-          className="flex items-stretch bg-bolt-elements-artifacts-background hover:bg-bolt-elements-artifacts-backgroundHover w-full overflow-hidden"
+          className="flex items-stretch bg-white hover:bg-gray-50 w-full overflow-hidden"
           onClick={() => {
             const showWorkbench = workbenchStore.showWorkbench.get();
             workbenchStore.showWorkbench.set(!showWorkbench);
@@ -77,7 +77,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
                   <div className={'i-svg-spinners:90-ring-with-bg'} style={{ fontSize: '2rem' }}></div>
                 )}
               </div>
-              <div className="bg-bolt-elements-artifacts-borderColor w-[1px]" />
+              <div className="bg-blue-200 w-[1px]" />
             </>
           )}
           <div className="px-5 p-3.5 w-full text-left">
@@ -85,7 +85,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             <div className="w-full w-full text-bolt-elements-textSecondary text-xs mt-0.5">Click to open Workbench</div>
           </div>
         </button>
-        <div className="bg-bolt-elements-artifacts-borderColor w-[1px]" />
+        <div className="bg-blue-200 w-[1px]" />
         <AnimatePresence>
           {actions.length && artifact.type !== 'bundled' && (
             <motion.button
@@ -93,7 +93,7 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
               animate={{ width: 'auto' }}
               exit={{ width: 0 }}
               transition={{ duration: 0.15, ease: cubicEasingFn }}
-              className="bg-bolt-elements-artifacts-background hover:bg-bolt-elements-artifacts-backgroundHover"
+              className="bg-white hover:bg-gray-50"
               onClick={toggleActions}
             >
               <div className="p-4">
@@ -112,9 +112,9 @@ export const Artifact = memo(({ messageId }: ArtifactProps) => {
             exit={{ height: '0px' }}
             transition={{ duration: 0.15 }}
           >
-            <div className="bg-bolt-elements-artifacts-borderColor h-[1px]" />
+            <div className="bg-blue-200 h-[1px]" />
 
-            <div className="p-5 text-left bg-bolt-elements-actions-background">
+            <div className="p-5 text-left bg-white">
               <ActionList actions={actions} />
             </div>
           </motion.div>
@@ -180,11 +180,16 @@ const ActionList = memo(({ actions }: ActionListProps) => {
               }}
             >
               <div className="flex items-center gap-1.5 text-sm">
-                <div className={classNames('text-lg', getIconColor(action.status))}>
+                <div
+                  className={classNames(
+                    'text-lg',
+                    status === 'running' ? 'text-blue-500' : getIconColor(action.status),
+                  )}
+                >
                   {status === 'running' ? (
                     <>
                       {type !== 'start' ? (
-                        <div className="i-svg-spinners:90-ring-with-bg"></div>
+                        <div className="i-svg-spinners:90-ring-with-bg text-blue-500"></div>
                       ) : (
                         <div className="i-ph:terminal-window-duotone"></div>
                       )}
@@ -201,7 +206,7 @@ const ActionList = memo(({ actions }: ActionListProps) => {
                   <div>
                     Create{' '}
                     <code
-                      className="bg-bolt-elements-artifacts-inlineCode-background text-bolt-elements-artifacts-inlineCode-text px-1.5 py-1 rounded-md text-bolt-elements-item-contentAccent hover:underline cursor-pointer"
+                      className="bg-blue-50 text-blue-600 px-1.5 py-1 rounded-md hover:underline cursor-pointer"
                       onClick={() => openArtifactInWorkbench(action.filePath)}
                     >
                       {action.filePath}

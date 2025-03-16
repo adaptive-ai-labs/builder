@@ -27,15 +27,15 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
   return (
     <div
       className={classNames(
-        'group rounded-lg text-sm text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white hover:bg-gray-50/80 dark:hover:bg-gray-800/30 overflow-hidden flex justify-between items-center px-3 py-2 transition-colors',
-        { 'text-gray-900 dark:text-white bg-gray-50/80 dark:bg-gray-800/30': isActiveChat },
+        'group rounded-lg text-sm text-blue-600 hover:text-blue-700 bg-white border-2 border-blue-200 overflow-hidden flex justify-between items-center px-3 py-2 transition-colors shadow-sm',
+        { 'text-blue-700 bg-blue-50': isActiveChat },
       )}
     >
       {editing ? (
         <form onSubmit={handleSubmit} className="flex-1 flex items-center gap-2">
           <input
             type="text"
-            className="flex-1 bg-white dark:bg-gray-900 text-gray-900 dark:text-white rounded-md px-3 py-1.5 text-sm border border-gray-200 dark:border-gray-800 focus:outline-none focus:ring-1 focus:ring-purple-500/50"
+            className="flex-1 bg-white text-blue-600 rounded-md px-3 py-1.5 text-sm border border-blue-200 focus:outline-none focus:ring-1 focus:ring-blue-500/50"
             autoFocus
             value={currentDescription}
             onChange={handleChange}
@@ -44,7 +44,7 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
           />
           <button
             type="submit"
-            className="i-ph:check h-4 w-4 text-gray-500 hover:text-purple-500 transition-colors"
+            className="i-ph:check h-4 w-4 text-blue-500 hover:text-blue-600 transition-colors"
             onMouseDown={handleSubmit}
           />
         </form>
@@ -55,11 +55,11 @@ export function HistoryItem({ item, onDelete, onDuplicate, exportChat }: History
           </WithTooltip>
           <div
             className={classNames(
-              'absolute right-0 top-0 bottom-0 flex items-center bg-white dark:bg-gray-950 group-hover:bg-gray-50/80 dark:group-hover:bg-gray-800/30 px-2',
-              { 'bg-gray-50/80 dark:bg-gray-800/30': isActiveChat },
+              'absolute right-0 top-0 bottom-0 flex items-center bg-white group-hover:bg-blue-50 px-2',
+              { 'bg-blue-50': isActiveChat },
             )}
           >
-            <div className="flex items-center gap-2.5 text-gray-400 dark:text-gray-500 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="flex items-center gap-2.5 text-blue-400 opacity-0 group-hover:opacity-100 transition-opacity">
               <ChatActionButton
                 toolTipContent="Export"
                 icon="i-ph:download-simple h-4 w-4"
@@ -123,7 +123,7 @@ const ChatActionButton = forwardRef(
         <button
           ref={ref}
           type="button"
-          className={`text-gray-400 dark:text-gray-500 hover:text-purple-500 dark:hover:text-purple-400 transition-colors ${icon} ${className ? className : ''}`}
+          className={`text-blue-400 hover:text-blue-600 transition-colors ${icon} ${className ? className : ''}`}
           onClick={onClick}
         />
       </WithTooltip>

@@ -1,0 +1,42 @@
+{
+  "headTitle": "Bolt - AI Agent",
+  "languageSwitcher": "Change language",
+  "welcome": "Welcome to Bolt",
+  "description": "An AI Agent built with Remix",
+  "intro": {
+    "heading": "Where ideas begin",
+    "subheading": "Bring ideas to life in seconds or get help on existing projects.",
+    "startBlankApp": "or start a blank app with your favorite stack"
+  },
+  "ui": {
+    "importChat": "Import Chat",
+    "importFolder": "Import Folder",
+    "createAI": "Create AI",
+    "loading": "Loading..."
+  },
+  "navigation": {
+    "home": "Home",
+    "about": "About",
+    "settings": "Settings"
+  },
+  "actions": {
+    "save": "Save",
+    "cancel": "Cancel",
+    "submit": "Submit",
+    "delete": "Delete"
+  },
+  "examplePrompts": {
+    "todoApp": "Build a todo app in React using Tailwind",
+    "blog": "Build a simple blog using Astro",
+    "cookieConsent": "Create a cookie consent form using Material UI",
+    "spaceInvaders": "Make a space invaders game",
+    "ticTacToe": "Make a Tic Tac Toe game in html, css and js only"
+  },
+  "chat": {
+    "placeholder": "How can we help you today?",
+    "getApiKey": "Get API Key",
+    "apiKeyNotSet": "Not Set (Please set via UI or ENV_VAR)",
+    "apiKeySetViaEnv": "Set via environment variable",
+    "apiKeySetViaUI": "Set via UI"
+  }
+}

@@ -98,10 +98,8 @@ export const TerminalTabs = memo(() => {
                       className={classNames(
                         'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
                         {
-                          'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textSecondary hover:text-bolt-elements-textPrimary':
-                            isActive,
-                          'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground':
-                            !isActive,
+                          'bg-blue-600 text-white': isActive,
+                          'bg-white border-2 border-blue-200 text-blue-600 hover:bg-blue-50': !isActive,
                         },
                       )}
                       onClick={() => setActiveTerminal(index)}
@@ -116,9 +114,8 @@ export const TerminalTabs = memo(() => {
                         className={classNames(
                           'flex items-center text-sm cursor-pointer gap-1.5 px-3 py-2 h-full whitespace-nowrap rounded-full',
                           {
-                            'bg-bolt-elements-terminals-buttonBackground text-bolt-elements-textPrimary': isActive,
-                            'bg-bolt-elements-background-depth-2 text-bolt-elements-textSecondary hover:bg-bolt-elements-terminals-buttonBackground':
-                              !isActive,
+                            'bg-blue-600 text-white': isActive,
+                            'bg-white border-2 border-blue-200 text-blue-600 hover:bg-blue-50': !isActive,
                           },
                         )}
                         onClick={() => setActiveTerminal(index)}

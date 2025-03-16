@@ -320,19 +320,19 @@ function File({
     <FileContextMenu onCopyPath={onCopyPath} onCopyRelativePath={onCopyRelativePath}>
       <NodeButton
         className={classNames('group', {
-          'bg-transparent hover:bg-bolt-elements-item-backgroundActive text-bolt-elements-item-contentDefault':
-            !selected,
-          'bg-bolt-elements-item-backgroundAccent text-bolt-elements-item-contentAccent': selected,
+          'bg-transparent hover:bg-blue-50 text-gray-800': !selected,
+          'bg-blue-600 text-white': selected,
         })}
         depth={depth}
         iconClasses={classNames('i-ph:file-duotone scale-98', {
-          'group-hover:text-bolt-elements-item-contentActive': !selected,
+          'group-hover:text-blue-600': !selected,
+          'text-white': selected,
         })}
         onClick={onClick}
       >
         <div
           className={classNames('flex items-center', {
-            'group-hover:text-bolt-elements-item-contentActive': !selected,
+            'group-hover:text-blue-600': !selected,
           })}
         >
           <div className="flex-1 truncate pr-2">{name}</div>

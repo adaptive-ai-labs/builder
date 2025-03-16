@@ -1,4 +1,5 @@
 import React from 'react';
+import { useTranslation } from 'react-i18next';
 import type { Template } from '~/types/template';
 import { STARTER_TEMPLATES } from '~/utils/constants';
 
@@ -21,6 +22,8 @@ const FrameworkLink: React.FC<FrameworkLinkProps> = ({ template }) => (
 );
 
 const StarterTemplates: React.FC = () => {
+  const { t } = useTranslation('common', { useSuspense: false });
+
   // Debug: Log available templates and their icons
   React.useEffect(() => {
     console.log(
@@ -31,7 +34,9 @@ const StarterTemplates: React.FC = () => {
 
   return (
     <div className="flex flex-col items-center gap-4">
-      <span className="text-sm text-gray-500">or start a blank app with your favorite stack</span>
+      <span className="text-sm text-gray-500">
+        {t('intro.startBlankApp') || 'or start a blank app with your favorite stack'}
+      </span>
       <div className="flex justify-center">
         <div className="flex w-70 flex-wrap items-center justify-center gap-4">
           {STARTER_TEMPLATES.map((template) => (

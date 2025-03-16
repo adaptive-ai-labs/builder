@@ -7,7 +7,7 @@ export function getTerminalTheme(overrides?: ITheme): ITheme {
   return {
     cursor: cssVar('--bolt-elements-terminal-cursorColor'),
     cursorAccent: cssVar('--bolt-elements-terminal-cursorColorAccent'),
-    foreground: cssVar('--bolt-elements-terminal-textColor'),
+    foreground: '#000000', // Black text
     background: cssVar('--bolt-elements-terminal-backgroundColor'),
     selectionBackground: cssVar('--bolt-elements-terminal-selection-backgroundColor'),
     selectionForeground: cssVar('--bolt-elements-terminal-selection-textColor'),

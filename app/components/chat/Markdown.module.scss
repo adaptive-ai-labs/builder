@@ -84,8 +84,8 @@ $code-font-size: 13px;
     @include not-inside-actions {
       border-radius: 6px;
       padding: 0.2em 0.4em;
-      background-color: var(--bolt-elements-messages-inlineCode-background);
-      color: var(--bolt-elements-messages-inlineCode-text);
+      background-color: rgba(59, 130, 246, 0.1); /* Light blue background */
+      color: #2563eb; /* Blue text color */
     }
   }
 

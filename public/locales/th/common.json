@@ -1,0 +1,42 @@
+{
+  "headTitle": "Bolt - AI Agent",
+  "languageSwitcher": "เปลี่ยนภาษา",
+  "welcome": "ยินดีต้อนรับสู่ Bolt",
+  "description": "AI Agent ที่สร้างด้วย Remix",
+  "intro": {
+    "heading": "ที่ซึ่งความคิดเริ่มต้น",
+    "subheading": "ทำให้ไอเดียมีชีวิตในไม่กี่วินาที หรือขอความช่วยเหลือสำหรับโปรเจกต์ที่มีอยู่",
+    "startBlankApp": "หรือเริ่มต้นแอปพลิเคชั่นว่างเปล่าด้วยสแต็คที่คุณชื่นชอบ"
+  },
+  "ui": {
+    "importChat": "นำเข้าแชท",
+    "importFolder": "นำเข้าโฟลเดอร์",
+    "createAI": "สร้าง AI",
+    "loading": "กำลังโหลด..."
+  },
+  "navigation": {
+    "home": "หน้าแรก",
+    "about": "เกี่ยวกับ",
+    "settings": "การตั้งค่า"
+  },
+  "actions": {
+    "save": "บันทึก",
+    "cancel": "ยกเลิก",
+    "submit": "ส่ง",
+    "delete": "ลบ"
+  },
+  "examplePrompts": {
+    "todoApp": "สร้างแอปบันทึกงานด้วย React และ Tailwind",
+    "blog": "สร้างบล็อกอย่างง่ายด้วย Astro",
+    "cookieConsent": "สร้างฟอร์มยินยอมคุกกี้ด้วย Material UI",
+    "spaceInvaders": "สร้างเกม Space Invaders",
+    "ticTacToe": "สร้างเกม Tic Tac Toe ด้วย html, css และ js เท่านั้น"
+  },
+  "chat": {
+    "placeholder": "เราจะช่วยคุณได้อย่างไรในวันนี้?",
+    "getApiKey": "รับ API Key",
+    "apiKeyNotSet": "ไม่ได้ตั้งค่า (โปรดตั้งค่าผ่าน UI หรือ ENV_VAR)",
+    "apiKeySetViaEnv": "ตั้งค่าผ่านตัวแปรสภาพแวดล้อม",
+    "apiKeySetViaUI": "ตั้งค่าผ่าน UI"
+  }
+}

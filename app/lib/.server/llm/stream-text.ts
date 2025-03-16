@@ -9,6 +9,7 @@ import { LLMManager } from '~/lib/modules/llm/manager';
 import { createScopedLogger } from '~/utils/logger';
 import { createFilesContext, extractPropertiesFromMessage } from './utils';
 import { getFilePaths } from './select-context';
+import { getLanguageInstructions } from '~/lib/common/prompts/language-instructions';
 
 export type Messages = Message[];
 
@@ -28,6 +29,7 @@ export async function streamText(props: {
   contextFiles?: FileMap;
   summary?: string;
   messageSliceId?: number;
+  language?: string;
 }) {
   const {
     messages,
@@ -40,6 +42,7 @@ export async function streamText(props: {
     contextOptimization,
     contextFiles,
     summary,
+    language = 'en', // Default to English if no language is provided
   } = props;
   let currentModel = DEFAULT_MODEL;
   let currentProvider = DEFAULT_PROVIDER.name;
@@ -48,6 +51,14 @@ export async function streamText(props: {
       const { model, provider, content } = extractPropertiesFromMessage(message);
       currentModel = model;
       currentProvider = provider;
+
+      // For Tagalog, add language instruction directly to the user message
+      if (language === 'tl') {
+        const tagalogInstruction = '[SUMAGOT KA SA TAGALOG LAMANG. HUWAG KANG SUMAGOT SA INGLES.]';
+        logger.info('Adding Tagalog instruction directly to user message');
+
+        return { ...message, content: `${tagalogInstruction}\n\n${content}` };
+      }
 
       return { ...message, content };
     } else if (message.role == 'assistant') {
@@ -92,12 +103,42 @@ export async function streamText(props: {
 
   const dynamicMaxTokens = modelDetails && modelDetails.maxTokenAllowed ? modelDetails.maxTokenAllowed : MAX_TOKENS;
 
-  let systemPrompt =
+  /*
+   * Get language-specific instructions - our universal prompt approach
+   * Use the selected language from the UI, with a fallback to the language cookie
+   * If no language is specified, default to the user's preferred language from the cookie
+   */
+  const supportedLanguages = ['en', 'tl', 'ceb', 'th'];
+  const effectiveLanguage =
+    language && supportedLanguages.includes(language) ? language : process.env.DEFAULT_LANGUAGE || 'en';
+
+  const languageInstructions = getLanguageInstructions(effectiveLanguage);
+
+  // Enhanced logging for debugging
+  logger.info(`Language requested: ${language || 'none'}, Using: ${effectiveLanguage} for LLM response`);
+  logger.info(`Language instructions type: ${typeof languageInstructions}, length: ${languageInstructions.length}`);
+  logger.info(`First 50 chars of instructions: ${languageInstructions.substring(0, 50)}...`);
+
+  // Get the base system prompt
+  const baseSystemPrompt =
     PromptLibrary.getPropmtFromLibrary(promptId || 'default', {
       cwd: WORK_DIR,
       allowedHtmlElements: allowedHTMLElements,
       modificationTagName: MODIFICATIONS_TAG_NAME,
     }) ?? getSystemPrompt();
+
+  /*
+   * Add language-specific instructions at the beginning of the system prompt for maximum prominence
+   * This is the key to effective language control - put instructions at the very beginning
+   */
+  let systemPrompt = languageInstructions
+    ? `${languageInstructions}
+
+${baseSystemPrompt}`
+    : baseSystemPrompt;
+
+  // Log the first 200 characters of the system prompt to verify language instructions are included
+  logger.info(`System prompt starts with: ${systemPrompt.substring(0, 200)}...`);
 
   if (files && contextFiles && contextOptimization) {
     const codeContext = createFilesContext(contextFiles, true);

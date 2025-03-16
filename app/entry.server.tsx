@@ -5,6 +5,11 @@ import { renderToReadableStream } from 'react-dom/server';
 import { renderHeadToString } from 'remix-island';
 import { Head } from './root';
 import { themeStore } from '~/lib/stores/theme';
+import { createInstance } from 'i18next';
+import { I18nextProvider, initReactI18next } from 'react-i18next';
+import Backend from 'i18next-fs-backend';
+import i18nextOptions from './i18nextOptions';
+import i18next from './i18n.server';
 
 export default async function handleRequest(
   request: Request,
@@ -15,13 +20,57 @@ export default async function handleRequest(
 ) {
   // await initializeModelList({});
 
-  const readable = await renderToReadableStream(<RemixServer context={remixContext} url={request.url} />, {
-    signal: request.signal,
-    onError(error: unknown) {
-      console.error(error);
-      responseStatusCode = 500;
+  // Create a new i18next instance for each request
+  const instance = createInstance();
+
+  // Detect locale from the request
+  let lng;
+
+  try {
+    lng = await i18next.getLocale(request);
+  } catch (error) {
+    console.error('Error getting locale:', error);
+    lng = i18nextOptions.fallbackLng;
+  }
+
+  // Get namespaces the routes about to render want to use
+  let ns;
+
+  try {
+    ns = i18next.getRouteNamespaces(remixContext);
+  } catch (error) {
+    console.error('Error getting namespaces:', error);
+    ns = ['common'];
+  }
+
+  // Initialize i18next for server-side rendering
+  await instance
+    .use(initReactI18next)
+    .use(Backend)
+    .init({
+      ...i18nextOptions,
+      lng,
+      ns,
+      backend: {
+        loadPath: './public/locales/{{lng}}/{{ns}}.json',
+      },
+    })
+    .catch((error) => {
+      console.error('Error initializing i18next:', error);
+    });
+
+  const readable = await renderToReadableStream(
+    <I18nextProvider i18n={instance}>
+      <RemixServer context={remixContext} url={request.url} />
+    </I18nextProvider>,
+    {
+      signal: request.signal,
+      onError(error: unknown) {
+        console.error(error);
+        responseStatusCode = 500;
+      },
     },
-  });
+  );
 
   const body = new ReadableStream({
     start(controller) {
@@ -30,7 +79,7 @@ export default async function handleRequest(
       controller.enqueue(
         new Uint8Array(
           new TextEncoder().encode(
-            `<!DOCTYPE html><html lang="en" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
+            `<!DOCTYPE html><html lang="${lng}" data-theme="${themeStore.value}"><head>${head}</head><body><div id="root" class="w-full h-full">`,
           ),
         ),
       );

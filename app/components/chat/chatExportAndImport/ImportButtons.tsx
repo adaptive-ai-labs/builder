@@ -1,5 +1,6 @@
 import type { Message } from 'ai';
 import { toast } from 'react-toastify';
+import { useTranslation } from 'react-i18next';
 import { ImportFolderButton } from '~/components/chat/ImportFolderButton';
 import { Button } from '~/components/ui/Button';
 import { classNames } from '~/utils/classNames';
@@ -10,6 +11,7 @@ type ChatData = {
 };
 
 export function ImportButtons(importChat: ((description: string, messages: Message[]) => Promise<void>) | undefined) {
+  const { t } = useTranslation('common', { useSuspense: false });
   return (
     <div className="flex flex-col items-center justify-center w-auto">
       <input
@@ -64,27 +66,27 @@ export function ImportButtons(importChat: ((description: string, messages: Messa
               const input = document.getElementById('chat-import');
               input?.click();
             }}
-            variant="outline"
+            variant="default"
             size="lg"
             className={classNames(
-              'gap-2 bg-[#F5F5F5] dark:bg-[#252525]',
-              'text-bolt-elements-textPrimary dark:text-white',
-              'hover:bg-[#E5E5E5] dark:hover:bg-[#333333]',
-              'border-[#E5E5E5] dark:border-[#333333]',
+              'gap-2 bg-blue-500',
+              'text-white',
+              'hover:bg-blue-600',
+              'border-blue-500',
               'h-10 px-4 py-2 min-w-[120px] justify-center',
               'transition-all duration-200 ease-in-out',
             )}
           >
             <span className="i-ph:upload-simple w-4 h-4" />
-            Import Chat
+            {t('ui.importChat')}
           </Button>
           <ImportFolderButton
             importChat={importChat}
             className={classNames(
-              'gap-2 bg-[#F5F5F5] dark:bg-[#252525]',
-              'text-bolt-elements-textPrimary dark:text-white',
-              'hover:bg-[#E5E5E5] dark:hover:bg-[#333333]',
-              'border border-[#E5E5E5] dark:border-[#333333]',
+              'gap-2 bg-blue-500',
+              'text-white',
+              'hover:bg-blue-600',
+              'border border-blue-500',
               'h-10 px-4 py-2 min-w-[120px] justify-center',
               'transition-all duration-200 ease-in-out rounded-lg',
             )}

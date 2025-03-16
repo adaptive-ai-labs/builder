@@ -18,7 +18,7 @@
   //   background-color: transparent;
 
   :global(html[data-theme='dark']) & {
-    mix-blend-mode: screen;
+    mix-blend-mode: multiply;
   }
 
   :global(html[data-theme='light']) & {
@@ -31,12 +31,13 @@
   border-radius: 100%;
 
   :global(html[data-theme='dark']) & {
-    mix-blend-mode: screen;
+    mix-blend-mode: multiply;
+    opacity: 0.7;
   }
 
   :global(html[data-theme='light']) & {
     mix-blend-mode: multiply;
-    opacity: 0.4;
+    opacity: 0.7;
   }
 }
 
