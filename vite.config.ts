@@ -93,7 +93,7 @@ export default defineConfig((config) => {
       'process.env.NODE_ENV': JSON.stringify(process.env.NODE_ENV),
     },
     build: {
-      target: 'esnext',
+      target: 'es2020',
       rollupOptions: {
         output: {
           format: 'esm',
