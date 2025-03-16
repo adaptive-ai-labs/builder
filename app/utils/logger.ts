@@ -50,8 +50,40 @@ function log(level: DebugLevel, scope: string | undefined, messages: any[]) {
   if (levelOrder.indexOf(level) < levelOrder.indexOf(currentLevel)) {
     return;
   }
+  
+  // Process messages to handle objects properly
+  const processedMessages = messages.map(msg => {
+    if (msg === null) return 'null';
+    if (msg === undefined) return 'undefined';
+    
+    // If it's an object or array, stringify it for better logging
+    if (typeof msg === 'object') {
+      try {
+        // For Error objects, extract the message and stack
+        if (msg instanceof Error) {
+          return `${msg.message}\n${msg.stack}`;
+        }
+        
+        // Handle circular references by using a replacer function
+        const seen = new WeakSet();
+        return JSON.stringify(msg, (key, value) => {
+          if (typeof value === 'object' && value !== null) {
+            if (seen.has(value)) {
+              return '[Circular]';
+            }
+            seen.add(value);
+          }
+          return value;
+        }, 2);
+      } catch (err) {
+        return `[Object that couldn't be stringified: ${Object.prototype.toString.call(msg)}]`;
+      }
+    }
+    
+    return msg;
+  });
 
-  const allMessages = messages.reduce((acc, current) => {
+  const allMessages = processedMessages.reduce((acc, current) => {
     if (acc.endsWith('\n')) {
       return acc + current;
     }

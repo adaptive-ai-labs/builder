@@ -71,6 +71,7 @@ interface BaseChatProps {
   clearAlert?: () => void;
   data?: JSONValue[] | undefined;
   actionRunner?: ActionRunner;
+  buildPlanPanel?: React.ReactNode; // Add support for dynamic checklist panel
 }
 
 export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
@@ -107,6 +108,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       clearAlert,
       data,
       actionRunner,
+      buildPlanPanel,
     },
     ref,
   ) => {
@@ -334,12 +336,16 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
               <ClientOnly>
                 {() => {
                   return chatStarted ? (
-                    <Messages
-                      ref={messageRef}
-                      className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
-                      messages={messages}
-                      isStreaming={isStreaming}
-                    />
+                    <>
+                      {/* Display the dynamic build plan panel if provided */}
+                      {buildPlanPanel}
+                      <Messages
+                        ref={messageRef}
+                        className="flex flex-col w-full flex-1 max-w-chat pb-6 mx-auto z-1"
+                        messages={messages}
+                        isStreaming={isStreaming}
+                      />
+                    </>
                   ) : null;
                 }}
               </ClientOnly>

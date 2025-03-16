@@ -9,9 +9,11 @@ import { useAnimate } from 'framer-motion';
 import { memo, useCallback, useEffect, useRef, useState } from 'react';
 import { cssTransition, toast, ToastContainer } from 'react-toastify';
 import { useMessageParser, usePromptEnhancer, useShortcuts, useSnapScroll } from '~/lib/hooks';
+import { BuildPlanPanel } from './BuildPlanPanel';
 import { description, useChatHistory } from '~/lib/persistence';
 import { chatStore } from '~/lib/stores/chat';
 import { workbenchStore } from '~/lib/stores/workbench';
+import { buildPlanStore } from '~/lib/stores/buildPlan';
 import { DEFAULT_MODEL, DEFAULT_PROVIDER, PROMPT_COOKIE_KEY, PROVIDER_LIST } from '~/utils/constants';
 import { cubicEasingFn } from '~/utils/easings';
 import { createScopedLogger, renderLogger } from '~/utils/logger';
@@ -295,10 +297,53 @@ export const ChatImpl = memo(
       }
 
       runAnimation();
+      
+      // Generate build plan first if this is a new chat and ensure it's completed before continuing
+      if (!chatStarted) {
+        // First generate the build plan using the LLM
+        try {
+          logger.debug('Generating build plan for prompt', { model, provider: provider.name });
+          
+          // Show a temporary message indicating we're preparing the build plan
+          setMessages([...messages, {
+            id: 'temp-build-plan-message',
+            role: 'assistant',
+            content: 'Analyzing your request and preparing a build plan...',
+          }]);
+          
+          // Generate the build plan
+          const plan = await buildPlanStore.analyzeBuildPrompt(messageContent, Date.now().toString(), model, provider);
+          
+          // Validate the plan has items
+          if (plan && Array.isArray(plan.items) && plan.items.length > 0) {
+            logger.debug('Build plan generated successfully', { itemCount: plan.items.length });
+            
+            // Show build plan panel
+            buildPlanStore.showBuildPlan.set(true);
+            
+            // Remove the temporary message once plan is ready
+            setMessages(messages.filter(msg => msg.id !== 'temp-build-plan-message'));
+          } else {
+            logger.warn('Generated build plan has no items');
+            // Remove the temporary message since plan failed
+            setMessages(messages.filter(msg => msg.id !== 'temp-build-plan-message'));
+          }
+        } catch (error) {
+          logger.error('Failed to generate build plan', { error });
+          // Remove the temporary message since plan failed
+          setMessages(messages.filter(msg => msg.id !== 'temp-build-plan-message'));
+        }
+        
+        // Short pause to ensure the UI updates with the build plan before proceeding
+        await new Promise(resolve => setTimeout(resolve, 300));
+      }
 
       if (!chatStarted) {
         setFakeLoading(true);
-
+        
+        // Wait for build plan to be processed
+        await new Promise(resolve => setTimeout(resolve, 500));
+        
         if (autoSelectTemplate) {
           const { template, title } = await selectStarterTemplate({
             message: messageContent,
@@ -346,6 +391,9 @@ export const ChatImpl = memo(
         }
 
         // If autoSelectTemplate is disabled or template selection failed, proceed with normal message
+        // Get build plan text if it exists
+        const buildPlanText = buildPlanStore.formatBuildPlanForAI();
+        
         setMessages([
           {
             id: `${new Date().getTime()}`,
@@ -353,7 +401,7 @@ export const ChatImpl = memo(
             content: [
               {
                 type: 'text',
-                text: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${messageContent}`,
+                text: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${messageContent}${buildPlanText}`,
               },
               ...imageDataList.map((imageData) => ({
                 type: 'image',
@@ -378,12 +426,15 @@ export const ChatImpl = memo(
 
       if (modifiedFiles !== undefined) {
         const userUpdateArtifact = filesToArtifacts(modifiedFiles, `${Date.now()}`);
+        // Get build plan text if it exists
+        const buildPlanText = buildPlanStore.formatBuildPlanForAI();
+        
         append({
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${userUpdateArtifact}${messageContent}`,
+              text: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${userUpdateArtifact}${messageContent}${buildPlanText}`,
             },
             ...imageDataList.map((imageData) => ({
               type: 'image',
@@ -394,12 +445,15 @@ export const ChatImpl = memo(
 
         workbenchStore.resetAllFileModifications();
       } else {
+        // Get build plan text if it exists
+        const buildPlanText = buildPlanStore.formatBuildPlanForAI();
+        
         append({
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${messageContent}`,
+              text: `[Model: ${model}]\n\n[Provider: ${provider.name}]\n\n${messageContent}${buildPlanText}`,
             },
             ...imageDataList.map((imageData) => ({
               type: 'image',
@@ -518,6 +572,13 @@ export const ChatImpl = memo(
         actionAlert={actionAlert}
         clearAlert={() => workbenchStore.clearAlert()}
         data={chatData}
+        buildPlanPanel={
+          <BuildPlanPanel 
+            messages={messages}
+            isStreaming={isLoading || fakeLoading}
+            data={chatData}
+          />
+        }
       />
     );
   },
