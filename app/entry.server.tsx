@@ -7,7 +7,7 @@ import { Head } from './root';
 import { themeStore } from '~/lib/stores/theme';
 import { createInstance } from 'i18next';
 import { I18nextProvider, initReactI18next } from 'react-i18next';
-import Backend from 'i18next-fs-backend';
+import i18nextHttpBackend from 'i18next-http-backend';
 import i18nextOptions from './i18nextOptions';
 import i18next from './i18n.server';
 
@@ -46,13 +46,13 @@ export default async function handleRequest(
   // Initialize i18next for server-side rendering
   await instance
     .use(initReactI18next)
-    .use(Backend)
+    .use(i18nextHttpBackend)
     .init({
       ...i18nextOptions,
       lng,
       ns,
       backend: {
-        loadPath: './public/locales/{{lng}}/{{ns}}.json',
+        loadPath: '/locales/{{lng}}/{{ns}}.json',
       },
     })
     .catch((error) => {
