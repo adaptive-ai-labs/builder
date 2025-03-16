@@ -180,8 +180,6 @@ ${props.summary}
 
   logger.info(`Sending llm call to ${provider.name} with model ${modelDetails.name}`);
 
-  // console.log(systemPrompt,processedMessages);
-
   return await _streamText({
     model: provider.getModelInstance({
       model: modelDetails.name,
