@@ -1,5 +1,3 @@
-import Backend from 'i18next-fs-backend/cjs';
-import { resolve } from 'node:path';
 import { RemixI18Next } from 'remix-i18next';
 import i18nextOptions from './i18nextOptions';
 
@@ -19,12 +17,12 @@ const i18next = new RemixI18Next({
   i18next: {
     ...i18nextOptions,
     backend: {
-      loadPath: resolve('./public/locales/{{lng}}/{{ns}}.json'),
+      loadPath: '/locales/{{lng}}/{{ns}}.json',
     },
   },
 
-  // The i18next plugins you want RemixI18next to use for `i18n.getFixedT` inside loaders and actions
-  backend: Backend,
+  // Use HTTP backend for Cloudflare edge environment
+  backend: { type: 'http' },
 });
 
 export default i18next;
