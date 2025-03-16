@@ -15,7 +15,7 @@ export const meta: MetaFunction = () => {
    * Note: We can't use the useTranslation hook here because it's outside of a component
    * In a real app, you'd use the loader data to get translations for meta
    */
-  return [{ title: 'Bolt - AI Agent' }, { name: 'description', content: 'An AI Agent built with Remix' }];
+  return [{ title: 'Builder - AI Agent' }, { name: 'description', content: 'An AI Agent built with Remix' }];
 };
 
 export const loader = () => json({});
