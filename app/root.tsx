@@ -56,8 +56,8 @@ export const handle = {
 export const links: LinksFunction = () => [
   {
     rel: 'icon',
-    href: '/favicon.svg',
-    type: 'image/svg+xml',
+    href: '/favicon.ico',
+    type: 'image/x-icon',
   },
   { rel: 'stylesheet', href: reactToastifyStyles },
   { rel: 'stylesheet', href: tailwindReset },
