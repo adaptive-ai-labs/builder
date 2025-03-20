@@ -2,6 +2,7 @@ import { stripIndents } from '~/utils/stripIndent';
 
 /**
  * Universal language-specific instructions for any LLM to respond in the specified language
+ * while allowing technical terms and programming concepts to remain in their original form
  */
 export const getLanguageInstructions = (language: string): string => {
   // Enhanced language map with stronger native instructions
@@ -11,33 +12,36 @@ export const getLanguageInstructions = (language: string): string => {
       nativeName: string;
       englishInstruction: string;
       nativeInstruction: string;
-      prohibitedLanguage: string;
+      technicalTermsNote: string;
     }
   > = {
     en: {
       nativeName: 'English',
       englishInstruction: 'You must respond only in English.',
       nativeInstruction: 'You must respond only in English.',
-      prohibitedLanguage: 'Do not respond in any language other than English.',
+      technicalTermsNote: 'Technical terms and programming concepts can be used as is.',
     },
     tl: {
       nativeName: 'Tagalog',
-      englishInstruction: 'You must respond only in Tagalog (Filipino).',
+      englishInstruction: 'You must respond primarily in Tagalog (Filipino).',
       nativeInstruction:
-        'MAHALAGA: Sumagot ka sa TAGALOG (Filipino) lamang. Huwag kang sumagot sa Ingles kahit kailan.',
-      prohibitedLanguage: 'Do not respond in English or any other language. Huwag sumagot sa Ingles o ibang wika.',
+        'MAHALAGA: Sumagot ka sa TAGALOG (Filipino) lamang, maliban sa mga programming at technical terms.',
+      technicalTermsNote:
+        'Any programming-related terms, technical concepts, framework names, library names, programming languages, code snippets, file names, and technical jargon should remain in their original form.',
     },
     ceb: {
       nativeName: 'Bisaya',
-      englishInstruction: 'You must respond only in Cebuano (Bisaya).',
-      nativeInstruction: 'IMPORTANTE: Tubag sa Bisaya lang. Ayaw gyud tubag sa English.',
-      prohibitedLanguage: 'Do not respond in English or any other language. Ayaw tubag sa English o laing pinulongan.',
+      englishInstruction: 'You must respond primarily in Cebuano (Bisaya).',
+      nativeInstruction: 'IMPORTANTE: Tubag sa Bisaya lang, gawas sa mga programming ug technical terms.',
+      technicalTermsNote:
+        'Any programming-related terms, technical concepts, framework names, library names, programming languages, code snippets, file names, and technical jargon should remain in their original form.',
     },
     th: {
       nativeName: 'ไทย',
-      englishInstruction: 'You must respond only in Thai.',
-      nativeInstruction: 'สำคัญ: กรุณาตอบเป็นภาษาไทยเท่านั้น ห้ามตอบเป็นภาษาอังกฤษเด็ดขาด',
-      prohibitedLanguage: 'Do not respond in English or any other language. ห้ามตอบเป็นภาษาอังกฤษหรือภาษาอื่นๆ',
+      englishInstruction: 'You must respond primarily in Thai.',
+      nativeInstruction: 'สำคัญ: กรุณาตอบเป็นภาษาไทยเท่านั้น ยกเว้นคำศัพท์ทางเทคนิคและการเขียนโปรแกรม',
+      technicalTermsNote:
+        'Any programming-related terms, technical concepts, framework names, library names, programming languages, code snippets, file names, and technical jargon should remain in their original form.',
     },
   };
 
@@ -51,8 +55,8 @@ export const getLanguageInstructions = (language: string): string => {
     ${langInstructions.englishInstruction}
     ${langInstructions.nativeInstruction}
 
-    ${langInstructions.prohibitedLanguage}
+    ${langInstructions.technicalTermsNote}
 
-    This is a hard requirement. Responses must be 100% in ${langInstructions.nativeName} only.
+    This is a hard requirement. Responses must be in ${langInstructions.nativeName}, except for technical terms, programming concepts, and code examples which can remain in their original form.
   `;
 };

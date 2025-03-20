@@ -52,13 +52,27 @@ export async function streamText(props: {
       currentModel = model;
       currentProvider = provider;
 
-      // For Tagalog, add language instruction directly to the user message
-      if (language === 'tl') {
-        const tagalogInstruction = '[SUMAGOT KA SA TAGALOG LAMANG. HUWAG KANG SUMAGOT SA INGLES.]';
-        logger.info('Adding Tagalog instruction directly to user message');
-
-        return { ...message, content: `${tagalogInstruction}\n\n${content}` };
-      }
+      /*
+       * Add language-specific instruction directly to the user message for all supported languages
+       * Commenting out to test if system prompt instructions alone are sufficient
+       */
+      /*
+       *const supportedLanguages = ['en', 'tl', 'ceb', 'th'] as const;
+       *type SupportedLanguage = typeof supportedLanguages[number];
+       *
+       *const languageInstructions: Record<SupportedLanguage, string> = {
+       *  en: '[RESPOND IN ENGLISH ONLY. PROGRAMMING AND TECHNICAL TERMS CAN BE USED AS IS.]',
+       *  tl: '[SUMAGOT KA SA TAGALOG LAMANG, MALIBAN SA MGA PROGRAMMING AT TECHNICAL TERMS. PWEDE GAMITIN ANG ANUMANG PROGRAMMING-RELATED TERMS, FRAMEWORK NAMES, CODE, AT TECHNICAL JARGON SA KANILANG ORIGINAL NA FORM.]',
+       *  ceb: '[TUBAG SA BISAYA LANG, GAWAS SA MGA PROGRAMMING UG TECHNICAL TERMS. PWEDE GAMITON ANG BISAN UNSANG PROGRAMMING-RELATED TERMS, FRAMEWORK NAMES, CODE, UG TECHNICAL JARGON SA ILANG ORIGINAL NGA FORM.]',
+       *  th: '[ตอบเป็นภาษาไทยเท่านั้น ยกเว้นคำศัพท์ทางเทคนิคและการเขียนโปรแกรม สามารถใช้คำศัพท์เกี่ยวกับการเขียนโปรแกรม ชื่อเฟรมเวิร์ค โค้ด และศัพท์เทคนิคในรูปแบบดั้งเดิมได้]'
+       *};
+       *
+       * // If the language is supported, add the instruction to the user message
+       *if (supportedLanguages.includes(language as SupportedLanguage)) {
+       *  logger.info(`Adding ${language} instruction directly to user message`);
+       *  return { ...message, content: `${languageInstructions[language as SupportedLanguage]}\n\n${content}` };
+       *}
+       */
 
       return { ...message, content };
     } else if (message.role == 'assistant') {
