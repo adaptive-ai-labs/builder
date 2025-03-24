@@ -179,6 +179,24 @@ async function chatAction({ context, request }: ActionFunctionArgs) {
           // logger.debug('Code Files Selected');
         }
 
+        // Generate Build Plan if applicable
+        const isChecklist = messages.some((m) => m.content.toLowerCase().includes("checklist"));
+        if (!isChecklist) {
+          const buildPlan = "Build Plan:\n1. Step one: Gather requirements\n2. Step two: Analyze context\n3. Step three: Execute plan\n4. Step four: Review and iterate";
+          logger.debug("Dispatching build plan annotation", buildPlan);
+          dataStream.writeMessageAnnotation({
+            type: 'buildPlan',
+            buildPlan,
+            plan: buildPlan,
+            chatId: messages.slice(-1)?.[0]?.id,
+          });
+          // Also send the build plan as a data item so it appears in the streaming response
+          dataStream.writeData({
+            type: 'buildPlan',
+            buildPlan,
+          });
+        }
+
         // Stream the text
         const options: StreamingOptions = {
           toolChoice: 'none',
