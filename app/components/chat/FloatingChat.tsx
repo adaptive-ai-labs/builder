@@ -286,37 +286,52 @@ export function FloatingChat({ children, chatStarted }: FloatingChatProps) {
   }
 
   // Create the chat content - either minimized button or full floating window
-  const chatContent = minimized ? (
-    // Minimized chat button
-    <div
-      className="fixed z-[9999] bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full shadow-lg cursor-pointer"
-      style={{ bottom: '20px', right: '20px' }}
-      onClick={() => setMinimized(false)}
+  const minimizedContent = (
+    <Rnd
+      position={position}
+      onDragStop={(e, d) => {
+        setPosition({ x: d.x, y: d.y });
+      }}
+      bounds="window"
+      enableResizing={false}
+      className="fixed z-[9999]"
     >
-      <div className="flex items-center justify-center w-14 h-14 text-blue-600 dark:text-blue-400">
-        <div className="i-ph:chat-text-fill text-2xl" />
+      <div 
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg cursor-pointer flex items-center"
+        style={{ minWidth: '240px' }}
+        onClick={() => setMinimized(false)}
+      >
+        <div className="drag-handle flex-1 px-4 py-2.5 flex items-center justify-between">
+          <span className="truncate text-sm font-medium text-gray-700 dark:text-gray-300">
+            {chat.title || 'Chat'}
+          </span>
+          <button 
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md ml-2"
+            onClick={(e) => {
+              e.stopPropagation();
+              setMinimized(false);
+            }}
+          >
+            <div className="i-ph:arrows-out-simple w-4 h-4" />
+          </button>
+        </div>
       </div>
-    </div>
-  ) : (
-    // Full floating chat window
+    </Rnd>
+  );
+
+  // Full chat window
+  const fullChatContent = (
     <Rnd
       ref={chatRef}
       size={size}
       position={position}
-      onDragStart={() => {
-        // When user begins dragging, mark as user-positioned
-        setUserPositioned(true);
-      }}
+      onDragStart={() => setUserPositioned(true)}
       onDragStop={(e, d) => {
-        // Ensure the chat stays within viewport boundaries
         const newX = Math.max(0, Math.min(d.x, window.innerWidth - (typeof size.width === 'string' ? parseInt(size.width) / 100 * window.innerWidth : size.width)));
         const newY = Math.max(0, Math.min(d.y, window.innerHeight - (typeof size.height === 'string' ? parseInt(size.height) / 100 * window.innerHeight : size.height)));
         setPosition({ x: newX, y: newY });
       }}
-      onResizeStart={() => {
-        // When user begins resizing, mark as user-positioned
-        setUserPositioned(true);
-      }} 
+      onResizeStart={() => setUserPositioned(true)}
       onResizeStop={(e, direction, ref, delta, position) => {
         const newWidth = parseInt(ref.style.width);
         const newHeight = parseInt(ref.style.height);
@@ -391,16 +406,23 @@ export function FloatingChat({ children, chatStarted }: FloatingChatProps) {
       {/* A fixed container for chat content */}
       <div className="flex flex-col h-full w-full">
         {/* Chat Header - Drag Handle */}
-        <div className="drag-handle flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 cursor-move flex-shrink-0">
-          <span className="font-medium text-gray-700 dark:text-gray-300">Chat</span>
-          <div className="flex items-center gap-1">
-            <IconButton 
-              title="Minimize" 
-              className="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 no-drag"
+        <div className="drag-handle flex items-center justify-between px-4 py-2.5 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 cursor-move flex-shrink-0">
+          <span className="font-medium text-gray-700 dark:text-gray-300 truncate">
+            {chat.title || 'Chat'}
+          </span>
+          <div className="flex items-center gap-3">
+            <button 
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-md no-drag"
+              onClick={() => {/* Add fullscreen logic */}}
+            >
+              <div className="i-ph:arrows-out-simple w-4 h-4" />
+            </button>
+            <button 
+              className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-md no-drag"
               onClick={() => setMinimized(true)}
             >
-              <div className="i-ph:minus text-xl" />
-            </IconButton>
+              <div className="i-ph:minus w-4 h-4" />
+            </button>
           </div>
         </div>
         
@@ -433,7 +455,7 @@ export function FloatingChat({ children, chatStarted }: FloatingChatProps) {
   // This completely isolates the floating chat from the page hierarchy
   return createPortal(
     <TooltipProvider>
-      {chatContent}
+      {minimized ? minimizedContent : fullChatContent}
     </TooltipProvider>,
     document.body
   );
