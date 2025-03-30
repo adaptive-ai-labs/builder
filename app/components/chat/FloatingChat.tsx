@@ -83,6 +83,7 @@ interface PositionState {
 export function FloatingChat({ children, chatStarted }: FloatingChatProps) {
   const chatRef = useRef<Rnd>(null);
   const [minimized, setMinimized] = useState(false);
+  const [isDragging, setIsDragging] = useState(false);
   const [size, setSize] = useState<SizeState>(DEFAULT_CHAT_SIZE);
   const [position, setPosition] = useState<PositionState>(BOTTOM_RIGHT_POSITION);
   const [userPositioned, setUserPositioned] = useState(false);
@@ -289,27 +290,40 @@ export function FloatingChat({ children, chatStarted }: FloatingChatProps) {
   const minimizedContent = (
     <Rnd
       position={position}
+      onDragStart={() => {
+        setIsDragging(true);
+      }}
+      onDrag={(e, d) => {
+        // Update position during drag
+        const newX = Math.max(0, Math.min(d.x, window.innerWidth - 240));
+        const newY = Math.max(0, Math.min(d.y, window.innerHeight - 41));
+        setPosition({ x: newX, y: newY });
+      }}
       onDragStop={(e, d) => {
-        setPosition({ x: d.x, y: d.y });
+        setIsDragging(false);
+        const newX = Math.max(0, Math.min(d.x, window.innerWidth - 240));
+        const newY = Math.max(0, Math.min(d.y, window.innerHeight - 41));
+        setPosition({ x: newX, y: newY });
       }}
       bounds="window"
       enableResizing={false}
       className="fixed z-[9999]"
     >
       <div 
-        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg cursor-pointer flex items-center"
+        className="bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-lg shadow-lg flex items-center"
         style={{ minWidth: '240px' }}
-        onClick={() => setMinimized(false)}
       >
         <div className="drag-handle flex-1 px-4 py-2.5 flex items-center justify-between">
           <span className="truncate text-sm font-medium text-gray-700 dark:text-gray-300">
             {chat.title || 'Chat'}
           </span>
           <button 
-            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md ml-2"
+            className="p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded-md ml-2 no-drag"
             onClick={(e) => {
               e.stopPropagation();
-              setMinimized(false);
+              if (!isDragging) {
+                setMinimized(false);
+              }
             }}
           >
             <div className="i-ph:arrows-out-simple w-4 h-4" />
@@ -325,10 +339,33 @@ export function FloatingChat({ children, chatStarted }: FloatingChatProps) {
       ref={chatRef}
       size={size}
       position={position}
-      onDragStart={() => setUserPositioned(true)}
+      onDragStart={() => {
+        setIsDragging(true);
+        setUserPositioned(true);
+      }}
+      onDrag={(e, d) => {
+        const currentWidth = typeof size.width === 'string' 
+          ? parseInt(size.width) / 100 * window.innerWidth 
+          : size.width;
+        const currentHeight = typeof size.height === 'string'
+          ? parseInt(size.height) / 100 * window.innerHeight
+          : size.height;
+
+        const newX = Math.max(0, Math.min(d.x, window.innerWidth - currentWidth));
+        const newY = Math.max(0, Math.min(d.y, window.innerHeight - currentHeight));
+        setPosition({ x: newX, y: newY });
+      }}
       onDragStop={(e, d) => {
-        const newX = Math.max(0, Math.min(d.x, window.innerWidth - (typeof size.width === 'string' ? parseInt(size.width) / 100 * window.innerWidth : size.width)));
-        const newY = Math.max(0, Math.min(d.y, window.innerHeight - (typeof size.height === 'string' ? parseInt(size.height) / 100 * window.innerHeight : size.height)));
+        setIsDragging(false);
+        const currentWidth = typeof size.width === 'string' 
+          ? parseInt(size.width) / 100 * window.innerWidth 
+          : size.width;
+        const currentHeight = typeof size.height === 'string'
+          ? parseInt(size.height) / 100 * window.innerHeight
+          : size.height;
+
+        const newX = Math.max(0, Math.min(d.x, window.innerWidth - currentWidth));
+        const newY = Math.max(0, Math.min(d.y, window.innerHeight - currentHeight));
         setPosition({ x: newX, y: newY });
       }}
       onResizeStart={() => setUserPositioned(true)}
@@ -419,7 +456,12 @@ export function FloatingChat({ children, chatStarted }: FloatingChatProps) {
             </button>
             <button 
               className="p-2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 dark:text-gray-400 dark:hover:text-gray-200 dark:hover:bg-gray-700 rounded-md no-drag"
-              onClick={() => setMinimized(true)}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (!isDragging) {
+                  setMinimized(true);
+                }
+              }}
             >
               <div className="i-ph:minus w-4 h-4" />
             </button>
