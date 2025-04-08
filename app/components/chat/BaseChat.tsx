@@ -6,6 +6,7 @@ import type { JSONValue, Message } from 'ai';
 import React, { type RefCallback, useEffect, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { ClientOnly } from 'remix-utils/client-only';
+
 // Remove Menu component import as it should be rendered separately
 import { IconButton } from '~/components/ui/IconButton';
 import { classNames } from '~/utils/classNames';
@@ -70,6 +71,8 @@ interface BaseChatProps {
   actionAlert?: ActionAlert;
   clearAlert?: () => void;
   data?: JSONValue[] | undefined;
+
+  /** Action runner for executing chat actions */
   actionRunner?: ActionRunner;
 }
 
@@ -106,6 +109,7 @@ export const BaseChat = React.forwardRef<HTMLDivElement, BaseChatProps>(
       actionAlert,
       clearAlert,
       data,
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       actionRunner,
     },
     ref,
