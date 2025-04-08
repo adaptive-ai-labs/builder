@@ -353,11 +353,7 @@ export const Workbench = memo(
 
     return (
       chatStarted && (
-        <motion.div
-          initial="closed"
-          animate={showWorkbench ? 'open' : 'closed'}
-          variants={workbenchVariants}
-        >
+        <motion.div initial="closed" animate={showWorkbench ? 'open' : 'closed'} variants={workbenchVariants}>
           <div
             className={classNames(
               'fixed top-[calc(var(--header-height)+1.5rem)] bottom-6 transition-[left,width] duration-200 bolt-ease-cubic-bezier',
@@ -371,7 +367,7 @@ export const Workbench = memo(
             style={{
               width: 'calc(100vw - 3rem)',
               right: '1.5rem',
-              position: 'absolute'
+              position: 'absolute',
             }}
           >
             <div className="absolute inset-0 px-2 lg:px-6">
