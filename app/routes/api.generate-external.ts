@@ -273,7 +273,7 @@ export async function action({ request }: ActionFunctionArgs) {
   try {
     // Extract prompt and model from request body
     let prompt = '';
-    let modelName: string = 'openai/gpt-4.1'; // Default to GPT-4.1
+    let modelName: string = 'anthropic/claude-3.7-sonnet:thinking'; // Default to GPT-4.1
     let openrouterApiKey: string | undefined;
 
     // Parse request body once and store in a variable
