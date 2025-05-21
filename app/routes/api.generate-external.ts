@@ -352,6 +352,11 @@ export async function action({ request }: ActionFunctionArgs) {
       model: modelName,
       messages: [
         {
+          role: 'system',
+          content:
+            "When generating web applications, you MUST use Tailwind CSS for styling and you MUST use Framer Motion for animations. These libraries are already included via CDN in the generated HTML file.\n\nFor Tailwind CSS:\n- You MUST use Tailwind utility classes for all styling\n- The Tailwind CDN is already included: <script src=\"https://cdn.tailwindcss.com\"></script>\n- Reference the official Tailwind CSS documentation for available classes\n\nFor Framer Motion:\n- You MUST use Framer Motion for ALL animations and transitions\n- Adding animations is REQUIRED for all interactive elements and UI components\n- The Framer Motion CDN is already included: <script src=\"https://cdn.jsdelivr.net/npm/framer-motion/dist/framer-motion.js\"></script>\n- Access the Framer Motion API via the global 'motion' object\n\n==== YOU MUST INCLUDE THE FOLLOWING ANIMATIONS IN YOUR CODE ====\n\n1. Page Load Animations:\n```javascript\ndocument.addEventListener('DOMContentLoaded', () => {\n  // Find all elements with staggered entrance animations\n  const animatedElements = document.querySelectorAll('.animate-in');\n  \n  // Create staggered animation for each element\n  animatedElements.forEach((element, index) => {\n    motion.animate(\n      element,\n      { \n        opacity: [0, 1],\n        y: [50, 0],\n        scale: [0.9, 1]\n      },\n      { \n        duration: 0.7, \n        delay: 0.15 * index,  // Staggered delay\n        ease: [0.25, 0.1, 0.25, 1] // Custom easing\n      }\n    );\n  });\n  \n  // Animate the hero section separately with a different animation\n  const hero = document.querySelector('.hero');\n  if (hero) {\n    motion.animate(\n      hero,\n      { \n        opacity: [0, 1],\n        scale: [0.95, 1]\n      },\n      { \n        duration: 1.2,\n        ease: 'easeOut'\n      }\n    );\n  }\n});\n```\n\n2. Button Hover and Click Animations:\n```javascript\nfunction setupButtonAnimations() {\n  // Find all interactive buttons\n  const buttons = document.querySelectorAll('.btn, button, .interactive');\n  \n  buttons.forEach(button => {\n    // Hover animation\n    button.addEventListener('mouseenter', () => {\n      motion.animate(\n        button,\n        { \n          scale: 1.05,\n          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)' \n        },\n        { duration: 0.2, ease: 'easeOut' }\n      );\n    });\n    \n    button.addEventListener('mouseleave', () => {\n      motion.animate(\n        button,\n        { \n          scale: 1,\n          boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)' \n        },\n        { duration: 0.2, ease: 'easeOut' }\n      );\n    });\n    \n    // Click animation\n    button.addEventListener('mousedown', () => {\n      motion.animate(\n        button,\n        { scale: 0.95 },\n        { duration: 0.1, ease: 'easeIn' }\n      );\n    });\n    \n    button.addEventListener('mouseup', () => {\n      motion.animate(\n        button,\n        { scale: 1.05 },\n        { duration: 0.1, ease: 'easeOut' }\n      );\n    });\n  });\n}\n\n// Call this function when the page loads\ndocument.addEventListener('DOMContentLoaded', setupButtonAnimations);\n```\n\n3. Scroll-triggered Animations:\n```javascript\ndocument.addEventListener('DOMContentLoaded', () => {\n  // Set up intersection observer for scroll animations\n  const observer = new IntersectionObserver(\n    (entries) => {\n      entries.forEach(entry => {\n        // When element enters viewport\n        if (entry.isIntersecting) {\n          const element = entry.target;\n          \n          // Different animations based on data attributes\n          const animationType = element.dataset.animation || 'fade';\n          \n          if (animationType === 'fade') {\n            motion.animate(\n              element,\n              { opacity: [0, 1], y: [50, 0] },\n              { duration: 0.8, ease: 'easeOut' }\n            );\n          } else if (animationType === 'slide') {\n            motion.animate(\n              element,\n              { opacity: [0, 1], x: [-100, 0] },\n              { duration: 0.8, ease: 'easeOut' }\n            );\n          } else if (animationType === 'zoom') {\n            motion.animate(\n              element,\n              { opacity: [0, 1], scale: [0.5, 1] },\n              { duration: 0.8, ease: [0.175, 0.885, 0.32, 1.275] } // Custom bounce effect\n            );\n          }\n          \n          // Unobserve after animation\n          observer.unobserve(element);\n        }\n      });\n    },\n    { threshold: 0.1 } // Trigger when 10% of the element is visible\n  );\n  \n  // Observe all elements with scroll-animate class\n  document.querySelectorAll('.scroll-animate').forEach(element => {\n    observer.observe(element);\n  });\n});\n```\n\n4. Menu/Dropdown Animations:\n```javascript\nfunction setupDropdownAnimations() {\n  const dropdownToggles = document.querySelectorAll('.dropdown-toggle');\n  \n  dropdownToggles.forEach(toggle => {\n    toggle.addEventListener('click', () => {\n      const dropdownMenu = toggle.nextElementSibling;\n      \n      if (dropdownMenu && dropdownMenu.classList.contains('dropdown-menu')) {\n        const isExpanded = dropdownMenu.classList.contains('expanded');\n        \n        if (!isExpanded) {\n          // Show animation\n          dropdownMenu.style.display = 'block';\n          dropdownMenu.style.opacity = '0';\n          dropdownMenu.style.transform = 'translateY(-10px)';\n          \n          motion.animate(\n            dropdownMenu,\n            {\n              opacity: [0, 1],\n              y: [-10, 0]\n            },\n            {\n              duration: 0.3,\n              ease: 'easeOut'\n            }\n          );\n          \n          dropdownMenu.classList.add('expanded');\n        } else {\n          // Hide animation\n          motion.animate(\n            dropdownMenu,\n            {\n              opacity: [1, 0],\n              y: [0, -10]\n            },\n            {\n              duration: 0.2,\n              ease: 'easeIn',\n              onComplete: () => {\n                dropdownMenu.style.display = 'none';\n                dropdownMenu.classList.remove('expanded');\n              }\n            }\n          );\n        }\n      }\n    });\n  });\n}\n\ndocument.addEventListener('DOMContentLoaded', setupDropdownAnimations);\n```\n\n5. Card/Element Hover Effects:\n```javascript\ndocument.addEventListener('DOMContentLoaded', () => {\n  const cards = document.querySelectorAll('.card, .hover-card');\n  \n  cards.forEach(card => {\n    // Add a subtle lift and shadow effect on hover\n    card.addEventListener('mouseenter', () => {\n      motion.animate(\n        card,\n        { \n          y: -5,\n          boxShadow: '0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04)'\n        },\n        { duration: 0.3, ease: 'easeOut' }\n      );\n    });\n    \n    card.addEventListener('mouseleave', () => {\n      motion.animate(\n        card,\n        { \n          y: 0,\n          boxShadow: '0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05)'\n        },\n        { duration: 0.3, ease: 'easeOut' }\n      );\n    });\n    \n    // Optional: Add a tilt effect based on mouse position\n    card.addEventListener('mousemove', (e) => {\n      const rect = card.getBoundingClientRect();\n      const x = e.clientX - rect.left; // x position within the element\n      const y = e.clientY - rect.top;  // y position within the element\n      \n      // Calculate tilt values (maximum 5 degrees tilt)\n      const tiltX = ((y / rect.height) - 0.5) * 10;\n      const tiltY = (-(x / rect.width) + 0.5) * 10;\n      \n      motion.animate(\n        card,\n        { rotateX: tiltX, rotateY: tiltY },\n        { duration: 0.2, ease: 'linear' }\n      );\n    });\n  });\n});\n```\n\n6. Tab Switching Animations:\n```javascript\nfunction setupTabAnimations() {\n  const tabButtons = document.querySelectorAll('[data-tab]');\n  const tabPanes = document.querySelectorAll('.tab-pane');\n  \n  tabButtons.forEach(button => {\n    button.addEventListener('click', () => {\n      const targetId = button.getAttribute('data-tab');\n      \n      // Animate out current tab\n      tabPanes.forEach(pane => {\n        if (pane.classList.contains('active')) {\n          motion.animate(\n            pane,\n            { opacity: [1, 0], x: [0, -20] },\n            {\n              duration: 0.3,\n              ease: 'easeIn',\n              onComplete: () => {\n                pane.classList.remove('active');\n                pane.style.display = 'none';\n              }\n            }\n          );\n        }\n      });\n      \n      // Animate in new tab\n      const targetPane = document.getElementById(targetId);\n      if (targetPane) {\n        targetPane.style.display = 'block';\n        targetPane.classList.add('active');\n        \n        motion.animate(\n          targetPane,\n          { opacity: [0, 1], x: [20, 0] },\n          { duration: 0.4, ease: 'easeOut' }\n        );\n      }\n      \n      // Update active tab button\n      tabButtons.forEach(btn => {\n        if (btn === button) {\n          btn.classList.add('active');\n        } else {\n          btn.classList.remove('active');\n        }\n      });\n    });\n  });\n}\n\ndocument.addEventListener('DOMContentLoaded', setupTabAnimations);\n```\n\nREMEMBER: You MUST implement at least 3 of these animation types in your generated code. Add the data-animation attributes and appropriate CSS classes (.animate-in, .btn, .card, etc.) to your HTML elements to work with these animations.\n\nYou MUST style components with Tailwind CSS utility classes rather than creating custom CSS. You MUST include Framer Motion animations for a polished user experience.",
+        },
+        {
           role: 'user',
           content: prompt,
         },
@@ -571,16 +576,47 @@ function App() {\n  return <${reactComponents[0]?.match(/const\s+([A-Z][\w]*?)\s
 <html>
 <head>
   <title>Generated Application</title>
-  <style>
-    body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
-    h1 { color: #333; }
-    pre { background: #f4f4f4; padding: 10px; border-radius: 4px; overflow-x: auto; }
-  </style>
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Framer Motion via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/framer-motion/dist/framer-motion.js"></script>
+  <script>
+    // Configure Tailwind
+    tailwind.config = {
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3063e9'
+          }
+        }
+      }
+    }
+  </script>
 </head>
-<body>
-  <h1>Generated Code</h1>
-  <p>There was an issue with template loading. Here's the generated content:</p>
-  <pre>${result.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+<body class="bg-gray-50 font-sans">
+  <div class="max-w-4xl mx-auto p-6">
+    <header class="mb-8">
+      <h1 class="text-3xl font-bold text-gray-800 mb-4">Generated Code</h1>
+      <p class="text-gray-600">There was an issue with template loading. Here's the generated content:</p>
+    </header>
+    <div id="content" class="bg-white p-6 rounded-lg shadow-sm border border-gray-200">
+      <pre class="bg-gray-100 p-4 rounded-md overflow-x-auto text-sm text-gray-800">${result.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+    </div>
+    <footer class="mt-8 text-center text-gray-500 text-sm">
+      <p>Generated with AI assistance</p>
+    </footer>
+  </div>
+
+  <script>
+    // Add a simple entrance animation using Framer Motion
+    if (window.motion) {
+      const content = document.getElementById('content');
+      motion.animate(content, 
+        { opacity: [0, 1], y: [20, 0] }, 
+        { duration: 0.5, ease: "easeOut" }
+      );
+    }
+  </script>
 </body>
 </html>`;
         }
@@ -631,155 +667,155 @@ function App() {\n  return <${reactComponents[0]?.match(/const\s+([A-Z][\w]*?)\s
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Generated Code</title>
-  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css">
+  <!-- Tailwind CSS via CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Framer Motion via CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/framer-motion/dist/framer-motion.js"></script>
+  <!-- Highlight.js for code syntax highlighting -->
   <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/atom-one-dark.min.css">
   <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
-  <style>
-    :root {
-      --primary: #3063e9;
-      --secondary: #0e1437;
-      --accent: #24cec1;
-      --bg: #f6f8fa;
-      --white: #fff;
-      --grey: #e7eaf1;
-      --code-bg: #282c34;
-      --radius: 12px;
+  <script>
+    // Configure Tailwind
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            primary: '#3063e9',
+            secondary: '#0e1437',
+            accent: '#24cec1',
+            background: '#f6f8fa',
+            codebg: '#282c34'
+          },
+          borderRadius: {
+            custom: '12px'
+          }
+        }
+      }
     }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-      padding-top: 20px;
-      padding-bottom: 60px;
-      background-color: var(--bg);
-      color: var(--secondary);
-      line-height: 1.6;
-    }
-    .navbar-brand { font-weight: bold; color: var(--primary); }
-    .code-section { margin-bottom: 30px; }
-    .code-section h2 {
-      margin-bottom: 10px;
-      font-size: 1.5rem;
-      color: var(--secondary);
-      font-weight: 600;
-    }
-    pre {
-      border-radius: var(--radius);
-      position: relative;
-      background: var(--code-bg);
-      margin-top: 8px;
-    }
-    pre code {
-      padding: 20px !important;
-      font-family: 'Fira Code', Consolas, Monaco, 'Andale Mono', monospace;
-      font-size: 0.9rem;
-    }
-    .hljs { background: var(--code-bg); }
-    .filename-label {
-      position: absolute;
-      top: 0;
-      right: 0;
-      background: rgba(0,0,0,0.3);
-      color: white;
-      font-size: 12px;
-      padding: 4px 8px;
-      border-bottom-left-radius: 8px;
-    }
-    .header {
-      margin-bottom: 2rem;
-      padding-bottom: 1rem;
-      border-bottom: 1px solid var(--grey);
-    }
-    .header h1 {
-      font-weight: 700;
-      color: var(--secondary);
-    }
-    .btn-primary {
-      background-color: var(--primary);
-      border-color: var(--primary);
-      border-radius: var(--radius);
-      padding: 0.5rem 1.2rem;
-      font-weight: 500;
-    }
-    .btn-primary:hover {
-      background-color: var(--accent);
-      border-color: var(--accent);
-    }
-    .nav-tabs {
-      border-bottom: 1px solid var(--grey);
-      margin-bottom: 1.5rem;
-    }
-    .nav-tabs .nav-link {
-      color: var(--secondary);
-      border: none;
-      padding: 0.5rem 1rem;
-      margin-right: 0.5rem;
-      border-radius: var(--radius) var(--radius) 0 0;
-    }
-    .nav-tabs .nav-link.active {
-      background-color: var(--primary);
-      color: white;
-    }
-    .footer {
-      text-align: center;
-      font-size: 0.9rem;
-      color: #7c8599;
-      margin-top: 3rem;
-      padding-top: 1rem;
-      border-top: 1px solid var(--grey);
+  </script>
+  <style type="text/tailwindcss">
+    @layer components {
+      .nav-tab {
+        @apply px-4 py-2 mr-2 rounded-t-lg font-medium transition-colors duration-200;
+      }
+      .nav-tab-active {
+        @apply bg-primary text-white;
+      }
+      .nav-tab-inactive {
+        @apply text-secondary hover:bg-gray-100;
+      }
+      .code-container {
+        @apply relative rounded-xl overflow-hidden mt-2;
+      }
+      .filename-badge {
+        @apply absolute top-0 right-0 bg-black/30 text-white text-xs py-1 px-2 rounded-bl-lg;
+      }
     }
   </style>
 </head>
-<body>
-  <div class="container">
-    <div class="header">
-      <h1 class="display-5">Generated Code</h1>
-      <p class="lead">This page displays the code generated based on your prompt.</p>
+<body class="bg-background text-secondary font-sans pt-5 pb-16">
+  <div class="container mx-auto px-4 max-w-6xl">
+    <div class="mb-8 pb-4 border-b border-gray-200">
+      <h1 class="text-4xl font-bold mb-2">Generated Code</h1>
+      <p class="text-lg text-gray-600">This page displays the code generated based on your prompt.</p>
     </div>
 
-    <ul class="nav nav-tabs" id="myTab" role="tablist">
-      <li class="nav-item" role="presentation">
-        <button class="nav-link active" id="files-tab" data-bs-toggle="tab" data-bs-target="#files" type="button" role="tab" aria-controls="files" aria-selected="true">Files</button>
-      </li>
-      <li class="nav-item" role="presentation">
-        <button class="nav-link" id="response-tab" data-bs-toggle="tab" data-bs-target="#response" type="button" role="tab" aria-controls="response" aria-selected="false">Full Response</button>
-      </li>
-    </ul>
+    <div class="mb-8">
+      <div class="border-b border-gray-200">
+        <nav class="flex -mb-px" role="tablist">
+          <button class="nav-tab nav-tab-active" id="files-tab" data-tab="files" role="tab" aria-controls="files" aria-selected="true">Files</button>
+          <button class="nav-tab nav-tab-inactive" id="response-tab" data-tab="response" role="tab" aria-controls="response" aria-selected="false">Full Response</button>
+        </nav>
+      </div>
 
-    <div class="tab-content" id="myTabContent">
-      <div class="tab-pane fade show active" id="files" role="tabpanel" aria-labelledby="files-tab">
+      <div class="tab-content mt-6">
+        <div id="files" class="tab-pane block" role="tabpanel" aria-labelledby="files-tab">
 `;
 
             // Add each code file with syntax highlighting
             for (const { filename, content, language } of codeFiles) {
               showcaseHTML += `
-        <div class="code-section">
-          <h2>${filename}</h2>
-          <pre><span class="filename-label">${filename}</span><code class="language-${language}">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+        <div class="mb-8">
+          <h2 class="text-xl font-semibold mb-2">${filename}</h2>
+          <div class="code-container bg-codebg">
+            <span class="filename-badge">${filename}</span>
+            <pre><code class="language-${language}">${content.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</code></pre>
+          </div>
         </div>
 `;
             }
 
             showcaseHTML += `
-      </div>
-      <div class="tab-pane fade" id="response" role="tabpanel" aria-labelledby="response-tab">
-        <div class="code-section">
-          <pre style="white-space: pre-wrap; padding: 20px;">${result.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+        </div>
+        <div id="response" class="tab-pane hidden" role="tabpanel" aria-labelledby="response-tab">
+          <div class="mb-8">
+            <pre class="overflow-auto rounded-xl bg-codebg p-5 text-white whitespace-pre-wrap max-h-[70vh]">${result.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+          </div>
         </div>
       </div>
     </div>
 
-    <div class="footer">
+    <div class="text-center text-gray-500 text-sm mt-12 pt-4 border-t border-gray-200">
       <p>Generated with AI assistance</p>
     </div>
   </div>
 
   <script>
+    // Syntax highlighting
     document.addEventListener('DOMContentLoaded', () => {
       document.querySelectorAll('pre code').forEach((block) => {
         hljs.highlightElement(block);
       });
     });
+
+    // Tab switching with Framer Motion animation
+    const tabButtons = document.querySelectorAll('[data-tab]');
+    const tabPanes = document.querySelectorAll('.tab-pane');
+    
+    tabButtons.forEach(button => {
+      button.addEventListener('click', () => {
+        const tabId = button.getAttribute('data-tab');
+        
+        // Update active tab
+        tabButtons.forEach(btn => {
+          if (btn.getAttribute('data-tab') === tabId) {
+            btn.classList.remove('nav-tab-inactive');
+            btn.classList.add('nav-tab-active');
+            btn.setAttribute('aria-selected', 'true');
+          } else {
+            btn.classList.remove('nav-tab-active');
+            btn.classList.add('nav-tab-inactive');
+            btn.setAttribute('aria-selected', 'false');
+          }
+        });
+        
+        // Show active tab content
+        tabPanes.forEach(pane => {
+          if (pane.id === tabId) {
+            pane.classList.remove('hidden');
+            pane.classList.add('block');
+            
+            // Add a simple fade-in animation using Framer Motion API
+            if (window.motion) {
+              const animation = {
+                opacity: [0, 1],
+                y: [10, 0]
+              };
+              const transition = {
+                duration: 0.3,
+                ease: "easeOut"
+              };
+              motion.animate(pane, animation, transition);
+            }
+          } else {
+            pane.classList.add('hidden');
+            pane.classList.remove('block');
+          }
+        });
+      });
+    });
   </script>
-  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
 </body>
 </html>`;
 
