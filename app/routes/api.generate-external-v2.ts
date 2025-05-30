@@ -738,6 +738,44 @@ async function buildProjectWithCloudService(params: {
   }
 }
 
+// Define GitHub API response types
+type GitHubBlobResponse = {
+  sha: string;
+  url: string;
+};
+
+type GitHubTreeResponse = {
+  sha: string;
+  url: string;
+  tree: Array<{
+    path: string;
+    mode: string;
+    type: string;
+    sha: string;
+  }>;
+};
+
+type GitHubCommitResponse = {
+  sha: string;
+  node_id: string;
+  url: string;
+  html_url: string;
+};
+
+type GitHubRepoResponse = {
+  id: number;
+  name: string;
+  full_name: string;
+  owner: {
+    login: string;
+  };
+  private: boolean;
+  html_url: string;
+  description: string | null;
+  fork: boolean;
+  url: string;
+};
+
 /**
  * Create a GitHub repository and upload files to it
  */
@@ -746,7 +784,7 @@ async function createGitHubRepository(files: Record<string, string>, token: stri
   let attempts = 0;
   const maxAttempts = 3;
   let repoName = '';
-  let repo: any = null;
+  let repo: GitHubRepoResponse | null = null;
 
   // Retry loop for repo creation in case of name conflicts
   while (!repoCreated && attempts < maxAttempts) {
@@ -795,7 +833,7 @@ async function createGitHubRepository(files: Record<string, string>, token: stri
         throw new Error(`Failed to create GitHub repository: ${createRepoResponse.statusText} - ${errorText}`);
       }
 
-      repo = await createRepoResponse.json();
+      repo = (await createRepoResponse.json()) as GitHubRepoResponse;
       repoCreated = true;
       logger.info(`Repository created successfully: ${repo.full_name}`);
     } catch (error) {
@@ -866,16 +904,119 @@ async function createGitHubRepository(files: Record<string, string>, token: stri
       return pathA.localeCompare(pathB);
     });
 
-    logger.info(`Uploading ${sortedFiles.length} files to GitHub in order...`);
+    logger.info(`Uploading ${sortedFiles.length} files to GitHub using batch approach...`);
 
-    // Upload files sequentially to avoid directory creation conflicts
-    for (const [normalizedPath, content] of sortedFiles) {
-      logger.info(`Uploading file to GitHub: ${normalizedPath} (${content.length} bytes)`);
+    /*
+     * Batch upload approach to reduce subrequests
+     * Method 1: Try to use Git Trees API for batch upload (single request)
+     */
+    try {
+      // Create blob objects for all files
+      const blobs: Array<{ path: string; sha: string }> = [];
 
-      const createFileResponse = await fetch(
-        `https://api.github.com/repos/${ownerLogin}/${repoName}/contents/${normalizedPath}`,
-        {
-          method: 'PUT',
+      // Batch size for blob creation (to avoid too many parallel requests)
+      const BLOB_BATCH_SIZE = 3;
+
+      for (let i = 0; i < sortedFiles.length; i += BLOB_BATCH_SIZE) {
+        const batch = sortedFiles.slice(i, i + BLOB_BATCH_SIZE);
+
+        const blobPromises = batch.map(async ([normalizedPath, content]) => {
+          const blobResponse = await fetch(`https://api.github.com/repos/${ownerLogin}/${repoName}/git/blobs`, {
+            method: 'POST',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/vnd.github.v3+json',
+              'User-Agent': 'bolt-diy-builder',
+            },
+            body: JSON.stringify({
+              content: Buffer.from(content, 'utf8').toString('base64'),
+              encoding: 'base64',
+            }),
+          });
+
+          if (!blobResponse.ok) {
+            throw new Error(`Failed to create blob for ${normalizedPath}`);
+          }
+
+          const blob = (await blobResponse.json()) as GitHubBlobResponse;
+
+          return { path: normalizedPath, sha: blob.sha };
+        });
+
+        const batchBlobs = await Promise.all(blobPromises);
+        blobs.push(...batchBlobs);
+
+        logger.info(
+          `Created blobs for batch ${Math.floor(i / BLOB_BATCH_SIZE) + 1}/${Math.ceil(sortedFiles.length / BLOB_BATCH_SIZE)}`,
+        );
+      }
+
+      // Create tree with all files in one request
+      const treeResponse = await fetch(`https://api.github.com/repos/${ownerLogin}/${repoName}/git/trees`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'bolt-diy-builder',
+        },
+        body: JSON.stringify({
+          tree: blobs.map(({ path, sha }) => ({
+            path,
+            mode: '100644',
+            type: 'blob',
+            sha,
+          })),
+        }),
+      });
+
+      if (!treeResponse.ok) {
+        throw new Error('Failed to create tree');
+      }
+
+      const tree = (await treeResponse.json()) as GitHubTreeResponse;
+
+      // Create commit
+      const commitResponse = await fetch(`https://api.github.com/repos/${ownerLogin}/${repoName}/git/commits`, {
+        method: 'POST',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'bolt-diy-builder',
+        },
+        body: JSON.stringify({
+          message: 'Add all files',
+          tree: tree.sha,
+          parents: [],
+        }),
+      });
+
+      if (!commitResponse.ok) {
+        throw new Error('Failed to create commit');
+      }
+
+      const commit = (await commitResponse.json()) as GitHubCommitResponse;
+
+      // Update main branch reference
+      const refResponse = await fetch(`https://api.github.com/repos/${ownerLogin}/${repoName}/git/refs/heads/main`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${token}`,
+          'Content-Type': 'application/json',
+          Accept: 'application/vnd.github.v3+json',
+          'User-Agent': 'bolt-diy-builder',
+        },
+        body: JSON.stringify({
+          sha: commit.sha,
+        }),
+      });
+
+      if (!refResponse.ok) {
+        // Try to create the ref if it doesn't exist
+        const createRefResponse = await fetch(`https://api.github.com/repos/${ownerLogin}/${repoName}/git/refs`, {
+          method: 'POST',
           headers: {
             Authorization: `Bearer ${token}`,
             'Content-Type': 'application/json',
@@ -883,23 +1024,53 @@ async function createGitHubRepository(files: Record<string, string>, token: stri
             'User-Agent': 'bolt-diy-builder',
           },
           body: JSON.stringify({
-            message: `Add ${normalizedPath}`,
-            content: Buffer.from(content, 'utf8').toString('base64'),
-            committer: {
-              name: 'Bolt.diy Builder',
-              email: 'noreply@bolt.diy',
-            },
+            ref: 'refs/heads/main',
+            sha: commit.sha,
           }),
-        },
-      );
+        });
 
-      if (!createFileResponse.ok) {
-        const errorText = await createFileResponse.text();
-        logger.error(`Failed to create file ${normalizedPath}: ${createFileResponse.statusText} - ${errorText}`);
-        throw new Error(`Failed to create file ${normalizedPath}: ${createFileResponse.statusText}`);
+        if (!createRefResponse.ok) {
+          throw new Error('Failed to update main branch reference');
+        }
       }
 
-      logger.info(`Successfully uploaded file to GitHub: ${normalizedPath}`);
+      logger.info(`Successfully uploaded all files using Git Trees API (reduced requests)`);
+    } catch (batchError) {
+      logger.warn(`Batch upload failed: ${batchError}, falling back to sequential upload`);
+
+      // Fallback to sequential upload with rate limiting
+      for (const [normalizedPath, content] of sortedFiles) {
+        logger.info(`Uploading file to GitHub: ${normalizedPath} (${content.length} bytes)`);
+
+        const createFileResponse = await fetch(
+          `https://api.github.com/repos/${ownerLogin}/${repoName}/contents/${normalizedPath}`,
+          {
+            method: 'PUT',
+            headers: {
+              Authorization: `Bearer ${token}`,
+              'Content-Type': 'application/json',
+              Accept: 'application/vnd.github.v3+json',
+              'User-Agent': 'bolt-diy-builder',
+            },
+            body: JSON.stringify({
+              message: `Add ${normalizedPath}`,
+              content: Buffer.from(content, 'utf8').toString('base64'),
+              committer: {
+                name: 'Bolt.diy Builder',
+                email: 'noreply@bolt.diy',
+              },
+            }),
+          },
+        );
+
+        if (!createFileResponse.ok) {
+          const errorText = await createFileResponse.text();
+          logger.error(`Failed to create file ${normalizedPath}: ${createFileResponse.statusText} - ${errorText}`);
+          throw new Error(`Failed to create file ${normalizedPath}: ${createFileResponse.statusText}`);
+        }
+
+        logger.info(`Successfully uploaded file to GitHub: ${normalizedPath}`);
+      }
     }
 
     logger.info(`Completed uploading ${sortedFiles.length} files to GitHub repository`);
