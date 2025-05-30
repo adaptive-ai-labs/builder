@@ -681,7 +681,7 @@ async function createZipArchive(files: Record<string, string>): Promise<Blob> {
 }
 
 /**
- * Build the project using the cloud build service
+ * Build the project using the cloud build service - returns job ID immediately
  */
 async function buildProjectWithCloudService(params: {
   siteId: string;
@@ -689,7 +689,7 @@ async function buildProjectWithCloudService(params: {
   buildCommand?: string;
 }): Promise<{
   success: boolean;
-  deployUrl?: string;
+  jobId: string;
   error?: string;
 }> {
   const buildServiceUrl = 'https://build-api-829111227941.asia-southeast1.run.app';
@@ -716,65 +716,16 @@ async function buildProjectWithCloudService(params: {
     const { jobId } = (await submitResponse.json()) as { jobId: string };
     logger.info(`Build job created: ${jobId}`);
 
-    // Poll for completion
-    let attempts = 0;
-    const maxAttempts = 900; // 15 minutes timeout (checking every second)
-    let lastStatus = '';
-
-    while (attempts < maxAttempts) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const statusResponse = await fetch(`${buildServiceUrl}/api/v1/build/${jobId}`);
-
-      if (!statusResponse.ok) {
-        throw new Error(`Failed to get build status: ${statusResponse.statusText}`);
-      }
-
-      const job = (await statusResponse.json()) as {
-        status: string;
-        deployUrl?: string;
-        error?: string;
-      };
-
-      // Only log when status changes
-      if (job.status !== lastStatus) {
-        logger.info(`Build job ${jobId} status changed: ${lastStatus} -> ${job.status}`);
-        lastStatus = job.status;
-      } else if (attempts % 10 === 0) {
-        // Log every 10 seconds if status hasn't changed
-        logger.debug(`Build job ${jobId} still ${job.status} (${attempts}s elapsed)`);
-      }
-
-      if (job.status === 'DEPLOYED') {
-        logger.info(`Build deployed successfully: ${job.deployUrl}`);
-        return {
-          success: true,
-          deployUrl: job.deployUrl,
-        };
-      }
-
-      if (job.status === 'FAILED') {
-        logger.error(`Build failed: ${job.error}`);
-        return {
-          success: false,
-          error: job.error || 'Build failed',
-        };
-      }
-
-      // If stuck in QUEUED for too long, timeout
-      if (job.status === 'QUEUED' && attempts > 180) {
-        logger.warn('Build job stuck in QUEUED state for over 3 minutes');
-        throw new Error('Build service timeout - job stuck in queue (workers likely overloaded)');
-      }
-
-      attempts++;
-    }
-
-    throw new Error(`Build timeout - job did not complete within ${maxAttempts} seconds (5 minutes)`);
+    // Return job ID immediately for frontend monitoring
+    return {
+      success: true,
+      jobId,
+    };
   } catch (error) {
     logger.error('Cloud build service error:', error);
     return {
       success: false,
+      jobId: '',
       error: error instanceof Error ? error.message : 'Unknown build error',
     };
   }
@@ -1610,7 +1561,6 @@ code {
       logger.info(`React project validation complete. Files: ${Object.keys(extractedFiles).join(', ')}`);
     }
 
-    let deploymentResult: { success: boolean; url?: string; error?: string } | null = null;
     const filesToDeploy = extractedFiles;
 
     // For framework projects that need building, use cloud build service
@@ -1707,16 +1657,42 @@ code {
           buildCommand: detectedFramework === 'nextjs' ? 'npm run build' : undefined,
         });
 
-        logger.info(`Cloud build result: success=${buildResult.success}, error=${buildResult.error}`);
+        logger.info(
+          `Cloud build result: success=${buildResult.success}, jobId=${buildResult.jobId}, error=${buildResult.error}`,
+        );
 
-        if (buildResult.success && buildResult.deployUrl) {
-          logger.info(`Cloud build succeeded with deploy URL: ${buildResult.deployUrl}`);
-          deploymentResult = {
-            success: true,
-            url: buildResult.deployUrl,
-          };
+        if (buildResult.success && buildResult.jobId) {
+          logger.info(`Build job submitted successfully: ${buildResult.jobId}`);
+
+          // Return job ID immediately for frontend monitoring
+          return new Response(
+            JSON.stringify({
+              success: true,
+              generatedContent: fullContent,
+              files: Object.keys(extractedFiles),
+              template: selectedTemplate,
+              framework: detectedFramework,
+              deployment: {
+                type: 'cloud-build',
+                jobId: buildResult.jobId,
+                siteId: buildSiteId,
+                status: 'BUILDING',
+                monitorUrl: `/api/build-status/${buildResult.jobId}`,
+                streamUrl: `/api/build-stream/${buildResult.jobId}`,
+
+                // Also provide direct build service URLs for debugging
+                buildServiceMonitorUrl: `https://build-api-829111227941.asia-southeast1.run.app/api/v1/build/${buildResult.jobId}`,
+                buildServiceStreamUrl: `https://build-api-829111227941.asia-southeast1.run.app/api/v1/build/${buildResult.jobId}/sse`,
+              },
+              buildMethod: 'cloud',
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          );
         } else {
-          logger.warn(`Cloud build failed: ${buildResult.error || 'Unknown error'}`);
+          logger.warn(`Cloud build submission failed: ${buildResult.error || 'Unknown error'}`);
           logger.warn('Falling back to direct deployment');
 
           // Fall back to direct deployment
@@ -1743,32 +1719,7 @@ code {
       );
     }
 
-    // If cloud build succeeded, return that result
-    if (deploymentResult?.success) {
-      logger.info('Deployment successful via cloud build service');
-
-      return new Response(
-        JSON.stringify({
-          success: true,
-          generatedContent: fullContent,
-          files: Object.keys(extractedFiles),
-          template: selectedTemplate,
-          framework: detectedFramework,
-          deployment: {
-            success: true,
-            deploy: {
-              url: deploymentResult.url!,
-              state: 'ready',
-            },
-          },
-          buildMethod: 'cloud',
-        }),
-        {
-          status: 200,
-          headers: { 'Content-Type': 'application/json' },
-        },
-      );
-    }
+    // If we reach here, cloud build was not used or failed, proceed with direct deployment
 
     // Otherwise, do direct deployment
     try {
