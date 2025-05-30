@@ -662,25 +662,6 @@ function detectFramework(files: Record<string, string>): string {
 }
 
 /**
- * Create a ZIP archive from files in memory
- */
-async function createZipArchive(files: Record<string, string>): Promise<Blob> {
-  // Dynamic import to avoid bundling issues
-  const { default: jsZip } = await import('jszip');
-  const zip = new jsZip();
-
-  // Add files to zip
-  for (const [path, content] of Object.entries(files)) {
-    // Remove leading slash if present
-    const normalizedPath = path.startsWith('/') ? path.slice(1) : path;
-    zip.file(normalizedPath, content);
-  }
-
-  // Generate zip blob
-  return await zip.generateAsync({ type: 'blob', compression: 'DEFLATE' });
-}
-
-/**
  * Build the project using the cloud build service - returns job ID immediately
  */
 async function buildProjectWithCloudService(params: {
@@ -1108,126 +1089,6 @@ async function createGitHubRepository(files: Record<string, string>, token: stri
   }
 }
 
-/**
- * Upload ZIP archive to a temporary Netlify site for use as archive URL (fallback method)
- */
-async function uploadArchiveToNetlify(zipBlob: Blob, token: string): Promise<string> {
-  try {
-    // Create a temporary site for hosting the archive
-    const siteName = `bolt-archive-${Date.now()}`;
-    const createSiteResponse = await fetch('https://api.netlify.com/api/v1/sites', {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        name: siteName,
-        custom_domain: null,
-      }),
-    });
-
-    if (!createSiteResponse.ok) {
-      throw new Error('Failed to create temporary site for archive');
-    }
-
-    const site = (await createSiteResponse.json()) as NetlifyResponse;
-    const siteId = site.id;
-
-    // Convert blob to buffer for upload
-    const arrayBuffer = await zipBlob.arrayBuffer();
-    const zipBuffer = Buffer.from(arrayBuffer);
-
-    // Create a simple HTML page that serves the ZIP file
-    const html = `<!DOCTYPE html>
-<html>
-<head>
-  <meta http-equiv="refresh" content="0;url=/archive.zip">
-</head>
-<body>
-  <a href="/archive.zip">Download Archive</a>
-</body>
-</html>`;
-
-    // Prepare file digests
-    const indexHash = await sha1(html);
-    const zipHash = await sha1(zipBuffer.toString('binary'));
-
-    // Create deployment
-    const deployResponse = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        files: {
-          '/index.html': indexHash,
-          '/archive.zip': zipHash,
-        },
-        async: true,
-      }),
-    });
-
-    if (!deployResponse.ok) {
-      throw new Error('Failed to create deployment for archive');
-    }
-
-    const deploy = (await deployResponse.json()) as NetlifyResponse;
-    const deployId = deploy.id;
-
-    // Wait for deploy to be ready and upload files
-    let ready = false;
-    let retries = 0;
-
-    while (!ready && retries < 30) {
-      await new Promise((resolve) => setTimeout(resolve, 1000));
-
-      const statusResponse = await fetch(`https://api.netlify.com/api/v1/sites/${siteId}/deploys/${deployId}`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-
-      const status = (await statusResponse.json()) as NetlifyResponse;
-
-      if (status.state === 'prepared' || status.state === 'uploaded') {
-        // Upload HTML
-        await fetch(`https://api.netlify.com/api/v1/deploys/${deployId}/files/index.html`, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/octet-stream',
-          },
-          body: html,
-        });
-
-        // Upload ZIP
-        await fetch(`https://api.netlify.com/api/v1/deploys/${deployId}/files/archive.zip`, {
-          method: 'PUT',
-          headers: {
-            Authorization: `Bearer ${token}`,
-            'Content-Type': 'application/octet-stream',
-          },
-          body: zipBuffer,
-        });
-
-        ready = true;
-      } else if (status.state === 'ready') {
-        return `${status.ssl_url || status.url}/archive.zip`;
-      }
-
-      retries++;
-    }
-
-    // Wait a bit more for deployment to be ready
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    return `https://${siteName}.netlify.app/archive.zip`;
-  } catch (error) {
-    logger.error('Failed to upload archive:', error);
-    throw error;
-  }
-}
-
 export async function action({ request, context }: ActionFunctionArgs) {
   try {
     // Parse request body
@@ -1593,33 +1454,28 @@ code {
       try {
         let archiveUrl: string;
 
-        // Try GitHub first if token is provided
-        if (githubToken) {
-          logger.info('Creating GitHub repository for archive...');
+        // ALWAYS use GitHub for archive URLs - Netlify archive URLs are unreliable
+        logger.info('Creating GitHub repository for archive (required for reliable builds)...');
 
-          try {
-            archiveUrl = await createGitHubRepository(extractedFiles, githubToken);
-            logger.info(`GitHub archive URL created successfully: ${archiveUrl}`);
-          } catch (githubError) {
-            logger.error('GitHub repository creation failed:', githubError);
-            logger.info('Falling back to Netlify archive method due to GitHub error...');
+        // Create a temporary GitHub token if none provided
+        const effectiveGithubToken = githubToken || process.env.GITHUB_TOKEN || 'ghp_temporary_token_placeholder';
 
-            const zipBlob = await createZipArchive(extractedFiles);
-            logger.info(`Created ZIP archive: ${zipBlob.size} bytes`);
-            archiveUrl = await uploadArchiveToNetlify(zipBlob, netlifyToken!);
-            logger.info(`Fallback archive uploaded: ${archiveUrl}`);
-          }
-        } else {
-          // Fallback to Netlify method
-          logger.info('GitHub token not provided, falling back to Netlify archive method...');
+        if (!githubToken && !process.env.GITHUB_TOKEN) {
+          logger.error('GitHub token is required for cloud builds - Netlify archive URLs are unreliable');
+          throw new Error(
+            'GitHub token is required for cloud builds. Please provide githubToken parameter or set GITHUB_TOKEN environment variable.',
+          );
+        }
 
-          const zipBlob = await createZipArchive(extractedFiles);
-          logger.info(`Created ZIP archive: ${zipBlob.size} bytes`);
-
-          // Upload archive to temporary Netlify site
-          logger.info('Uploading archive to temporary site...');
-          archiveUrl = await uploadArchiveToNetlify(zipBlob, netlifyToken!);
-          logger.info(`Archive uploaded: ${archiveUrl}`);
+        try {
+          archiveUrl = await createGitHubRepository(extractedFiles, effectiveGithubToken);
+          logger.info(`GitHub archive URL created successfully: ${archiveUrl}`);
+        } catch (githubError) {
+          logger.error('GitHub repository creation failed:', githubError);
+          logger.error('Cannot proceed with cloud build - GitHub archive required for reliable builds');
+          throw new Error(
+            `GitHub repository creation failed: ${githubError instanceof Error ? githubError.message : 'Unknown error'}. Cloud builds require GitHub archives.`,
+          );
         }
 
         // Ensure we have a site ID
